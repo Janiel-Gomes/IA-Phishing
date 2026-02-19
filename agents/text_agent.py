@@ -1,55 +1,93 @@
-from transformers import pipeline
+import re
 import logging
 
 logger = logging.getLogger(__name__)
 
-class NLPTextAgent:
-    def __init__(self, model_name="ealvaradob/bert-finetuned-phishing"):
-        self.name = "NLP Text Analyzer"
-        self.model_name = model_name
-        self.pipe = self._load_model()
+# Palavras-chave típicas de phishing em e-mails
+PHISHING_KEYWORDS = [
+    # Urgência
+    "urgente", "imediatamente", "expirar", "expira", "bloqueado", "suspensa",
+    "suspensão", "bloqueio", "encerrar", "cancelamento", "prazo",
+    # Ação
+    "clique aqui", "acesse agora", "confirme", "verifique", "atualize",
+    "click here", "verify now", "confirm", "update your",
+    # Ameaças
+    "sua conta", "account suspended", "unusual activity", "atividade suspeita",
+    "unauthorized access", "acesso não autorizado",
+    # Prêmios/golpes
+    "parabéns", "ganhou", "prêmio", "congratulations", "winner", "selected",
+    "você foi selecionado", "resgate",
+    # Financeiro
+    "senha", "password", "cpf", "cartão", "credit card", "bank account",
+    "dados bancários", "informações bancárias",
+]
 
-    def _load_model(self):
-        try:
-            logger.info(f"Carregando modelo para {self.name}: {self.model_name}...")
-            pipe = pipeline("text-classification", model=self.model_name)
-            logger.info(f"Modelo {self.model_name} carregado com sucesso.")
-            return pipe
-        except Exception as e:
-            logger.error(f"Erro ao carregar o modelo NLP: {e}")
-            return None
+class NLPTextAgent:
+    def __init__(self, model_name=None):
+        self.name = "NLP Text Analyzer"
+        logger.info(f"{self.name} iniciado com análise heurística.")
 
     def analyze(self, text):
         """
-        Analisa o conteúdo textual (e-mail ou corpo da página) usando NLP.
+        Analisa o conteúdo textual usando heurísticas NLP sem dependências pesadas.
         """
         if not text or len(text.strip()) < 10:
-            return {"agent": self.name, "score": 0, "findings": ["Texto insuficiente para análise NLP"], "result": "Neutral"}
-
-        if self.pipe is None:
-            return {"agent": self.name, "score": 0, "findings": ["Modelo NLP não disponível"], "result": "Error"}
-
-        try:
-            # Predição usando a pipeline do Transformers
-            # Nota: truncamos o texto para o limite do modelo (geralmente 512 tokens)
-            prediction = self.pipe(text[:512])[0]
-            
-            label = prediction['label'].lower()
-            confidence = prediction['score']
-            
-            # Mapeamento (depende do modelo, mas geralmente LABEL_1 ou 'phishing')
-            is_phishing = "phishing" in label or "1" in label
-            result = "Phishing" if is_phishing else "Legítima"
-            
-            # Ajustamos o score para ser positivo para phishing
-            score = confidence if is_phishing else (1 - confidence)
-
             return {
                 "agent": self.name,
-                "score": float(score),
-                "result": result,
-                "findings": [f"Confiança do modelo ({self.model_name}): {confidence:.2%}"]
+                "score": 0,
+                "findings": ["Texto insuficiente para análise NLP"],
+                "result": "Neutral"
             }
-        except Exception as e:
-            logger.error(f"Erro na análise do NLPTextAgent: {e}")
-            return {"agent": self.name, "score": 0, "findings": [f"Erro interno: {str(e)}"], "result": "Error"}
+
+        text_lower = text.lower()
+        findings = []
+        score = 0.0
+
+        # 1. Palavras-chave suspeitas
+        matched = [kw for kw in PHISHING_KEYWORDS if kw in text_lower]
+        if matched:
+            kw_score = min(len(matched) * 0.08, 0.5)
+            score += kw_score
+            findings.append(f"{len(matched)} palavra(s) suspeita(s): {', '.join(matched[:5])}")
+
+        # 2. Links suspeitos no texto
+        urls_in_text = re.findall(r'https?://[^\s]+', text)
+        if urls_in_text:
+            suspicious_urls = [u for u in urls_in_text if any(
+                x in u for x in ['bit.ly', 'tinyurl', 'goo.gl', 'redirect', 'token=', 'verify']
+            )]
+            if suspicious_urls:
+                score += 0.2
+                findings.append(f"Links encurtados/suspeitos encontrados: {len(suspicious_urls)}")
+
+        # 3. Abuso de maiúsculas (urgência)
+        words = text.split()
+        if words:
+            caps_ratio = sum(1 for w in words if w.isupper() and len(w) > 2) / len(words)
+            if caps_ratio > 0.2:
+                score += 0.15
+                findings.append("Uso excessivo de maiúsculas (indicador de urgência)")
+
+        # 4. Erros ortográficos comuns de phishing (substituição de letras)
+        leet_patterns = re.findall(r'[a@][c\(][e3][s\$][s\$]|[p\|][a@][s\$]{2}[w\/][o0]r[d]', text_lower)
+        if leet_patterns:
+            score += 0.15
+            findings.append("Padrões de ofuscação de texto detectados")
+
+        score = min(score, 1.0)
+
+        if score >= 0.5:
+            result = "Phishing"
+        elif score >= 0.25:
+            result = "Suspeito"
+        else:
+            result = "Legítima"
+            if not findings:
+                findings.append("Nenhum padrão suspeito detectado no texto")
+
+        return {
+            "agent": self.name,
+            "score": round(score, 3),
+            "result": result,
+            "findings": findings if findings else ["Análise heurística concluída sem alertas"]
+        }

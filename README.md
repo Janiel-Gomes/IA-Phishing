@@ -2,11 +2,14 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![Bootstrap](https://img.shields.io/badge/Bootstrap_5-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+[![HuggingFace](https://img.shields.io/badge/HuggingFace%20Spaces-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/spaces/janiel01/IA-Phishing)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
 > **Avaliação Intermediária — IA Generativa (30% da nota final)**  
 > Desenvolvido integralmente com auxílio de agente de codificação IA.
+
+🔗 **Endpoint público:** [huggingface.co/spaces/janiel01/IA-Phishing](https://huggingface.co/spaces/janiel01/IA-Phishing)  
+📦 **Repositório:** [github.com/Janiel-Gomes/IA-Phishing](https://github.com/Janiel-Gomes/IA-Phishing)
 
 ---
 
@@ -38,9 +41,9 @@ O **IA-Phishing** é uma plataforma web de **análise multimodal** que combina *
 | Agente | O que analisa | Exemplos de detecção |
 |--------|--------------|---------------------|
 | 🔗 **URL Lexical** | Estrutura da URL | Domínios suspeitos, excesso de subdomínios, IPs no lugar de domínios |
-| 📝 **NLP Text** | Conteúdo textual | Palavras de urgência ("sua conta será bloqueada"), erros gramaticais |
+| 📝 **NLP Text** | Conteúdo textual | Palavras de urgência ("sua conta será bloqueada"), links encurtados |
 | 💻 **HTML Structural** | Código-fonte HTML | Formulários apontando para domínios diferentes, campos de senha em HTTP |
-| 🖼️ **Vision** | Imagens/screenshots | Logos de marca, texto em imagens para burlar filtros |
+| 🖼️ **Vision** | Imagens/screenshots | Metadados de imagem, detecção de formatos suspeitos |
 
 Cada agente gera um **score de risco independente**, e um **orquestrador** consolida tudo com pesos ponderados para gerar o veredito final: **Legítima**, **Suspeita** ou **Phishing**.
 
@@ -48,7 +51,7 @@ Cada agente gera um **score de risco independente**, e um **orquestrador** conso
 
 ## 🔮 Como a IA Será Integrada no Futuro
 
-Atualmente, os agentes utilizam **heurísticas e análises baseadas em regras** (mock/placeholder). Na próxima etapa do projeto, cada agente será aprimorado com modelos de IA:
+Atualmente, os agentes utilizam **heurísticas e análises baseadas em regras**. Na próxima etapa, cada agente será aprimorado com modelos de IA reais:
 
 | Agente | Integração Futura |
 |--------|-------------------|
@@ -78,14 +81,19 @@ A arquitetura multi-agente já está preparada para receber esses modelos sem al
 ### 🕐 Histórico de Buscas
 - **Últimas 10 análises** salvas em SQLite
 - **Paginação inteligente:** mostra apenas as 2 mais recentes com botão "Ver Mais"
-- **Expansão de detalhes:** clique na seta (▼) de qualquer item para expandir e ver o score de confiança e a análise completa da IA, com animação suave de abertura
-- **Estilos premium** para a caixa de detalhe: gradiente sutil, labels em maiúsculo com ícone azul, separador elegante e glassmorphism na caixa de texto
+- **Expansão de detalhes:** clique na seta (▼) para expandir score de confiança e análise completa da IA, com animação suave
+- **Estilos premium** para a caixa de detalhe: gradiente sutil, labels com ícone azul e glassmorphism
 
 ### 🗂️ Sidebar de Navegação
 - Menu lateral com glassmorphism
 - Alternância entre "Analisador" e "Estatísticas"
 - Botão de fechar (✕) dentro do menu + overlay clicável
 - Design responsivo — colapsa em telas menores
+
+### 🔔 Popup Inicial de Aviso
+- Modal com animação elástica ao abrir o site
+- Explica que o projeto é acadêmico e não deve ser usado para fins de segurança reais
+- Fecha ao clicar no botão ou no overlay
 
 ---
 
@@ -94,7 +102,7 @@ A arquitetura multi-agente já está preparada para receber esses modelos sem al
 ### Por que Flask (e não FastAPI/Gradio)?
 
 Flask foi escolhido por:
-1. **Flexibilidade total** no design da UI — sem limitações de componentes pré-prontos (como Gradio/Streamlit)
+1. **Flexibilidade total** no design da UI — sem limitações de componentes pré-prontos
 2. **Servir templates HTML** nativamente com Jinja2
 3. **Simplicidade** — um único `app.py` serve backend, API e frontend
 4. **Compatibilidade** com uploads de arquivos e FormData multipart
@@ -102,9 +110,9 @@ Flask foi escolhido por:
 ### Por que arquitetura Multi-Agente?
 
 Em vez de um único modelo monolítico, optei por agentes especializados porque:
-1. **Modularidade** — cada agente pode ser desenvolvido, testado e substituído independentemente
+1. **Modularidade** — cada agente pode ser desenvolvido e substituído independentemente
 2. **Explicabilidade** — o usuário vê exatamente quais sinais cada agente detectou
-3. **Escalabilidade** — novos agentes (ex: para análise de DNS, certificados SSL) podem ser adicionados sem mudar a interface
+3. **Escalabilidade** — novos agentes podem ser adicionados sem mudar a interface
 4. **Pesos configuráveis** — o orquestrador combina os scores com pesos ajustáveis
 
 ```
@@ -121,11 +129,18 @@ Vision (15%)     ───┘
 - Python já tem suporte nativo
 - Suficiente para o escopo do protótipo
 
+### Por que Hugging Face Spaces para deploy?
+
+- **Link permanente** sem precisar manter ngrok rodando
+- **Gratuito** com CPU básico suficiente para Flask
+- **Docker nativo** — total controle do ambiente
+- **Integração fácil** via upload de arquivos ou git
+
 ### Escolhas de UI/UX
 
-- **Glassmorphism** — estilo visual moderno com transparências e blur, dando um ar premium à aplicação
-- **Design escuro** — Adequado para uma ferramenta de segurança, reduz fadiga visual
-- **Input unificado estilo "chat"** — inspirado em interfaces modernas de IA (ChatGPT, Claude), mais intuitivo do que formulários tradicionais
+- **Glassmorphism** — estilo visual moderno com transparências e blur
+- **Design claro** com acentos em azul — transmite confiança e segurança
+- **Input unificado estilo "chat"** — inspirado em interfaces modernas de IA (ChatGPT, Claude)
 - **Responsivo** — sidebar colapsável, layout adaptável para mobile
 
 ---
@@ -134,26 +149,25 @@ Vision (15%)     ───┘
 
 ```
 IA-Phishing/
+├── Dockerfile                # Configuração para deploy no HF Spaces
 ├── app.py                    # Servidor Flask, rotas API e banco de dados
-├── requirements.txt          # Dependências Python
+├── requirements.txt          # Dependências Python (apenas essenciais)
 ├── phishing_history.db       # Banco SQLite (gerado automaticamente)
 │
 ├── agents/                   # Módulo de agentes de análise
 │   ├── __init__.py
 │   ├── orchestrator.py       # Orquestrador — combina resultados dos agentes
 │   ├── url_agent.py          # Agente de análise lexical de URLs
-│   ├── text_agent.py         # Agente de análise NLP de texto
+│   ├── text_agent.py         # Agente de análise NLP (heurísticas)
 │   ├── html_agent.py         # Agente de análise estrutural de HTML
 │   └── vision_agent.py       # Agente de análise de imagens
 │
 ├── templates/
-│   └── index.html            # Template principal (Analisador + Estatísticas)
+│   └── index.html            # Template principal (Analisador + Estatísticas + Popup)
 │
-├── static/
-│   ├── style.css             # Estilos customizados (630+ linhas)
-│   └── script.js             # Lógica frontend (450+ linhas)
-│
-└── models/                   # Diretório para modelos de IA (futuro)
+└── static/
+    ├── style.css             # Estilos customizados (630+ linhas)
+    └── script.js             # Lógica frontend (450+ linhas)
 ```
 
 ---
@@ -168,6 +182,7 @@ IA-Phishing/
 | **UI Framework** | Bootstrap 5 | Grid system, utilitários |
 | **Ícones** | Font Awesome 6 | Iconografia |
 | **Análise** | BeautifulSoup4, Requests | Parsing HTML, requisições HTTP |
+| **Deploy** | Docker + Hugging Face Spaces | Endpoint público permanente |
 | **IA (futuro)** | Transformers, Torch | Modelos BERT para classificação |
 
 ---
@@ -181,7 +196,7 @@ IA-Phishing/
 
 ```bash
 # 1. Clonar o repositório
-git clone https://github.com/seu-usuario/IA-Phishing.git
+git clone https://github.com/Janiel-Gomes/IA-Phishing.git
 cd IA-Phishing
 
 # 2. Criar ambiente virtual
@@ -196,80 +211,75 @@ pip install -r requirements.txt
 python app.py
 ```
 
-A aplicação estará disponível em `http://localhost:5001`
+A aplicação estará disponível em `http://localhost:7860`
 
-### Publicar Endpoint (ngrok)
+### Endpoint Público
 
-```bash
-ngrok http 5001
-```
+Acesse diretamente em: **https://janiel01-ia-phishing.hf.space**
 
 ---
 
 ## ✅ O que Funcionou Bem
 
 ### 1. Geração da Arquitetura Multi-Agente
-O agente de codificação entendeu perfeitamente o conceito de múltiplos agentes especializados com um orquestrador central. Em um único prompt, ele gerou a estrutura completa dos 4 agentes (`url_agent.py`, `text_agent.py`, `html_agent.py`, `vision_agent.py`) e o `orchestrator.py` com o sistema de pesos ponderados. A separação de responsabilidades ficou limpa desde a primeira iteração.
+O agente entendeu o conceito de múltiplos agentes especializados com um orquestrador central. Em um único prompt, gerou a estrutura completa dos 4 agentes e o `orchestrator.py` com o sistema de pesos ponderados.
 
 **Exemplo de prompt efetivo:**
 > "Evolua meu projeto para um sistema multi-agente com agentes especializados em URL, NLP, HTML e Visão, orquestrados por um agente central que consolida os resultados com pesos ponderados."
 
 ### 2. Interface Glassmorphism Completa
-O agente gerou todo o CSS (550+ linhas) com o tema escuro + glassmorphism sem intervenção manual. Os efeitos de blur, transparência, bordas luminosas e animações de hover ficaram profissionais desde a primeira versão. A barra de input unificada com o menu "+" foi especialmente bem implementada.
+O agente gerou todo o CSS (630+ linhas) com o tema claro + glassmorphism sem intervenção manual. Os efeitos de blur, transparência e animações de hover ficaram profissionais desde a primeira versão.
 
 ### 3. Página de Estatísticas
-Ao pedir "gere a página de estatísticas", o agente criou de uma só vez:
-- O endpoint `/stats` no backend com queries SQL agregadas
-- Os 4 cards KPI com ícones e cores
-- As barras de distribuição animadas
-- A timeline com ícones por tipo de resultado
-- A navegação entre páginas (Analisador ↔ Estatísticas)
+Ao pedir "gere a página de estatísticas", o agente criou de uma só vez o endpoint `/stats`, os 4 cards KPI, as barras animadas, a timeline e a navegação entre páginas.
 
 ### 4. Persistência com SQLite
-A integração Flask-SQLAlchemy foi gerada corretamente, incluindo o modelo `ScannedURL`, a criação automática do banco e o endpoint `/history` com paginação — tudo funcional sem nenhum ajuste.
+A integração Flask-SQLAlchemy foi gerada corretamente, incluindo o modelo `ScannedURL`, a criação automática do banco e o endpoint `/history` — tudo funcional sem ajustes.
 
-### 5. Iteração Incremental
-A estratégia de construir incrementalmente (estrutura → agentes → UI → refinamentos) funcionou muito bem com o agente. Cada iteração adicionava funcionalidade sem quebrar o que já existia.
+### 5. Deploy no Hugging Face Spaces
+O agente gerou o `Dockerfile` correto e identificou que a porta deveria ser `7860`. O deploy foi concluído com sucesso rapidamente.
+
+### 6. Iteração Incremental
+A estratégia de construir incrementalmente (estrutura → agentes → UI → refinamentos → deploy) funcionou muito bem. Cada iteração adicionava funcionalidade sem quebrar o que já existia.
 
 ---
 
 ## ❌ O que Não Funcionou
 
 ### 1. Bug de Referência JavaScript (`navAnalyzer`)
-Após uma refatoração do frontend, o botão "Analisador" na sidebar parou de funcionar. O agente havia renomeado o ID no HTML mas não atualizou todas as referências no JavaScript, gerando um `ReferenceError: navAnalyzer is not defined`. 
+Após uma refatoração, o botão "Analisador" parou de funcionar. O agente havia renomeado o ID no HTML mas não atualizou todas as referências no JavaScript, gerando `ReferenceError`.
 
-**Como foi resolvido:** O agente identificou o problema ao analisar o console do navegador e adicionou o guard `if (navAnalyzer)` para proteger contra referências nulas.
-
-**Aprendizado:** Ao fazer refatorações que envolvem múltiplos arquivos (HTML + JS), é importante verificar todas as referências cruzadas.
+**Como foi resolvido:** Adicionado guard `if (navAnalyzer)` para proteger contra referências nulas.
 
 ### 2. Sidebar que Não Fechava
-Ao implementar o botão de toggle da sidebar na página de Estatísticas, o agente criou o botão mas ele ficava **atrás da sidebar** quando ela abria, tornando impossível fechá-la. O overlay de fundo (que deveria fechar ao clique) existia no código mas o usuário não percebia que podia clicar ali.
+O botão de toggle da sidebar ficava **atrás da sidebar** quando ela abria.
 
-**Como foi resolvido:** Adicionamos um botão de fechar (✕) **dentro** da sidebar, ao lado do logo, para que o usuário sempre tenha uma forma visível de fechar o menu.
+**Como foi resolvido:** Adicionado botão de fechar (✕) dentro da sidebar e overlay clicável.
 
-**Aprendizado:** Interações de toggle precisam de múltiplos caminhos de saída para boa UX.
+### 3. Desalinhamento de Larguras
+A barra de input (700px) e o histórico (800px) tinham `max-width` diferentes. **Resolvido:** Unificados para `800px`.
 
-### 3. Desalinhamento de Larguras (Input vs. Histórico)
-A barra de input e a seção de histórico tinham `max-width` diferentes (700px vs. 800px), causando um desalinhamento visual. Isso aconteceu porque o agente modificou os componentes em momentos diferentes sem manter consistência entre eles.
+### 4. Função de Toggle do Histórico Não Definida
+O HTML dinâmico dos cards chamava `toggleHistoryDetail(index)` via `onclick`, mas a função nunca havia sido declarada no `script.js`. Clicar na seta não produzia nenhum efeito.
 
-**Como foi resolvido:** Unificamos ambos para `max-width: 800px`.
+**Como foi resolvido:** Implementada a função no escopo global via `window.toggleHistoryDetail = function(index)`.
 
-### 4. Dificuldade com Edições no HTML
-O agente teve repetidas falhas ao tentar inserir blocos de HTML grandes no arquivo `index.html`. O tool de edição de código não encontrava o conteúdo-alvo quando havia caracteres especiais (CRLF, acentos) ou quando o trecho aparecia mais de uma vez no arquivo. Foram necessárias várias tentativas com abordagens diferentes até conseguir inserir o bloco da página de estatísticas.
+**Aprendizado:** Funções chamadas via `onclick` em HTML gerado dinamicamente devem ser declaradas no escopo global.
 
-**Aprendizado:** Edição de arquivos HTML grandes com muitos blocos similares (`</div></section>`) é um desafio para ferramentas automatizadas.
+### 5. Erro de Deploy — `ModuleNotFoundError: transformers`
+O `text_agent.py` importava `from transformers import pipeline`, mas a biblioteca foi removida do `requirements.txt` para agilizar o build no HF Spaces.
 
-### 5. VisionAgent Básico
-O agente de visão (`vision_agent.py`) é atualmente o mais limitado — ele verifica apenas metadados básicos da imagem (tamanho, tipo) e retorna um score fixo baixo. Não há OCR, detecção de logos ou análise visual real ainda.
+**Como foi resolvido:** O agente reescreveu o `text_agent.py` para usar análise heurística pura (regex, palavras-chave, padrões de urgência) sem dependências externas pesadas.
 
-**Razão:** Manter o protótipo leve e funcional. A integração com modelos de visão computacional está planejada para a próxima fase.
+### 6. Upload Acidental da Pasta `.venv`
+No primeiro upload para o HF Spaces, a pasta `.venv` (36.720 arquivos) foi incluída acidentalmente.
 
-### 6. Função de Toggle do Histórico Não Definida
-O HTML dinâmico dos cards do histórico chamava `toggleHistoryDetail(index)` via atributo `onclick`, mas essa função nunca havia sido declarada no `script.js`. Como resultado, clicar na seta (▼) de qualquer item do histórico não produzia nenhum efeito visível para o usuário.
+**Como foi resolvido:** A operação foi cancelada e o upload foi refeito selecionando apenas os arquivos necessários.
 
-**Como foi resolvido:** O agente identificou a função ausente ao inspecionar o `script.js` e adicionou a implementação completa com toggle de `display` e rotação do chevron via `style.transform`.
+### 7. VisionAgent Básico
+O agente de visão verifica apenas metadados básicos da imagem. Não há OCR nem análise visual real.
 
-**Aprendizado:** Funções chamadas via `onclick` em HTML gerado dinamicamente devem ser sempre declaradas no escopo global (`window.toggleHistoryDetail = ...`) para serem acessíveis fora do escopo de módulos.
+**Razão:** Manter o protótipo leve. A integração com modelos de visão está planejada para a próxima fase.
 
 ---
 
@@ -280,21 +290,22 @@ O HTML dinâmico dos cards do histórico chamava `toggleHistoryDetail(index)` vi
 
 ### Processo de Desenvolvimento
 
-O desenvolvimento seguiu uma abordagem **iterativa e incremental**, utilizando o agente em todas as etapas:
-
 | Fase | O que foi pedido ao agente | Resultado |
-|------|--------------------------|-----------|
-| **1. Setup** | "Analise o projeto e me diga como rodar" | Identificou a estrutura Flask, dependências e porta |
+|------|--------------------------|-----------| 
+| **1. Setup** | "Analise o projeto e me diga como rodar" | Identificou estrutura Flask, dependências e porta |
 | **2. Multi-Agente** | "Evolua para sistema multi-agente com URL, NLP, HTML e Vision agents" | Gerou 5 arquivos Python completos |
 | **3. Histórico** | "Implemente busca recente com SQLite" | Criou modelo, endpoint e rendering no frontend |
 | **4. UI Unificada** | "Crie interface unificada estilo chat com menu +" | Refatorou completamente o frontend (HTML + CSS + JS) |
 | **5. Bug Fix** | "O botão analisador não funciona" (screenshot) | Diagnosticou ReferenceError e corrigiu |
-| **6. Refinamento** | "Alinhe a largura do input com o histórico" | Ajustou max-width de 700px→800px |
+| **6. Alinhamento** | "Alinhe a largura do input com o histórico" | Ajustou max-width de 700px→800px |
 | **7. Paginação** | "Mostre apenas 2 itens com botão Ver Mais" | Implementou paginação com toggle |
-| **8. Estatísticas** | "Gere a página de estatísticas" (screenshot de referência) | Criou endpoint + HTML + CSS + JS completos |
+| **8. Estatísticas** | "Gere a página de estatísticas" (screenshot) | Criou endpoint + HTML + CSS + JS completos |
 | **9. Sidebar** | "Adicione botão para abrir/fechar menu lateral" | Adicionou toggle + close button |
-| **10. Bug Fix Histórico** | "Clico na seta mas não aparece o texto" | Diagnosticou função `toggleHistoryDetail` ausente e a implementou |
-| **11. Estilo Histórico** | "Deixe essas caixas de textos mais bonitas" | Adicionou 70+ linhas de CSS premium para as caixas de detalhes |
+| **10. Bug Fix Histórico** | "Clico na seta mas não aparece o texto" | Diagnosticou `toggleHistoryDetail` ausente e implementou |
+| **11. Estilo Histórico** | "Deixe essas caixas de textos mais bonitas" | Adicionou 70+ linhas de CSS premium |
+| **12. Popup Aviso** | "Adicione popup inicial explicando que é projeto de teste" | Gerou modal com glassmorphism e animação elástica |
+| **13. Deploy HF Spaces** | "Quero subir no Hugging Face Spaces" | Gerou Dockerfile, ajustou porta e orientou o deploy |
+| **14. Bug Deploy** | "Erro: No module named 'transformers'" | Reescreveu `text_agent.py` com heurísticas puras |
 
 ### Extensão do Uso
 
@@ -311,10 +322,10 @@ especializados em URL, NLP, HTML e Visão"
 → Resultado: Gerou toda a arquitetura em uma iteração
 
 ✅ "Gere a página de estatísticas agora" + screenshot de referência
-→ Resultado: Criou backend + frontend de uma vez, seguindo o design de referência
+→ Resultado: Criou backend + frontend de uma vez
 
-✅ "Deixe a caixa de inserir do mesmo tamanho de buscas recentes"
-→ Resultado: Identificou e corrigiu o desalinhamento CSS
+✅ "Consigo subir no Hugging Face Spaces?"
+→ Resultado: Gerou Dockerfile, explicou o processo e acompanhou o deploy
 ```
 
 ### Exemplos de Prompts que Precisaram de Iteração
@@ -324,9 +335,9 @@ especializados em URL, NLP, HTML e Visão"
 → Problema: Primeira versão não permitia fechar a sidebar
 → Solução: Após feedback visual, adicionou botão ✕ dentro da sidebar
 
-⚠️ "Mostre apenas 2 últimas buscas com botão Ver Mais"  
-→ Problema: Botão não foi inserido no HTML na primeira tentativa
-→ Solução: Necessitou múltiplas tentativas de edição até encontrar o ponto correto
+⚠️ Deploy no HF Spaces
+→ Problema: Import de transformers causou ModuleNotFoundError
+→ Solução: Agente reescreveu o agente NLP com heurísticas puras
 ```
 
 ---
