@@ -313,23 +313,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const itemsToShow = showingAll ? allHistoryItems : allHistoryItems.slice(0, 2);
 
-        historyContainer.innerHTML = itemsToShow.map(item => {
+        historyContainer.innerHTML = itemsToShow.map((item, index) => {
             const isPhishing = item.result === 'Phishing';
             const isSuspect = item.result === 'Suspeito';
             const colorClass = isPhishing ? 'phishing' : (isSuspect ? 'suspect' : 'safe');
+            const confidenceText = item.confidence ? `${item.confidence}%` : 'N/A';
+            const desc = item.description || 'Sem detalhes disponíveis para esta análise.';
 
             return `
-                <div class="history-item glass" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); switchMode('url'); document.getElementById('url-input').value='${item.url}'">
-                    <div class="history-info">
-                        <span class="history-url">${item.url}</span>
-                        <div class="history-meta">
-                            <span class="history-status-dot dot-${colorClass}"></span>
-                            <span>${item.result}</span>
-                            <span><i class="far fa-clock me-1"></i>${item.timestamp}</span>
+                <div class="history-card glass rounded-4 mb-3">
+                    <div class="history-item" onclick="toggleHistoryDetail(${index})">
+                        <div class="history-info">
+                            <span class="history-url">${item.url}</span>
+                            <div class="history-meta">
+                                <span class="history-status-dot dot-${colorClass}"></span>
+                                <span>${item.result}</span>
+                                <span><i class="far fa-clock me-1"></i>${item.timestamp}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="history-badge badge-${colorClass}">
+                                ${item.result}
+                            </div>
+                            <i class="fas fa-chevron-down history-chevron" id="chevron-${index}" style="color: var(--text-muted); font-size: 0.7rem; transition: transform 0.3s ease;"></i>
                         </div>
                     </div>
-                    <div class="history-badge badge-${colorClass}">
-                        ${item.result}
+                    <div class="history-detail" id="detail-${index}" style="display: none;">
+                        <div class="detail-divider"></div>
+                        <div class="detail-content">
+                            <div class="detail-row">
+                                <div class="detail-label"><i class="fas fa-shield-alt me-2"></i>Resultado</div>
+                                <div class="detail-value">
+                                    <span class="history-badge badge-${colorClass}">${item.result}</span>
+                                    <span class="ms-2" style="font-size: 0.85rem; color: var(--text-muted);">Confiança: <strong>${confidenceText}</strong></span>
+                                </div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label"><i class="fas fa-brain me-2"></i>Análise da IA</div>
+                                <div class="detail-description">${desc}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -405,6 +428,19 @@ document.addEventListener('DOMContentLoaded', () => {
             timelineEl.innerHTML = '<p class="text-muted text-center mb-0">Nenhuma análise registrada ainda.</p>';
         }
     }
+
+    // --- Toggle History Detail ---
+    window.toggleHistoryDetail = function (index) {
+        const detail = document.getElementById(`detail-${index}`);
+        const chevron = document.getElementById(`chevron-${index}`);
+        if (!detail) return;
+
+        const isOpen = detail.style.display !== 'none';
+        detail.style.display = isOpen ? 'none' : 'block';
+        if (chevron) {
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+    };
 
     // Initialize
     fetchHistory();
