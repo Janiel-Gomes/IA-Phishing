@@ -78,7 +78,8 @@ A arquitetura multi-agente já está preparada para receber esses modelos sem al
 ### 🕐 Histórico de Buscas
 - **Últimas 10 análises** salvas em SQLite
 - **Paginação inteligente:** mostra apenas as 2 mais recentes com botão "Ver Mais"
-- **Click para re-analisar:** clique em qualquer item do histórico para repetir a análise
+- **Expansão de detalhes:** clique na seta (▼) de qualquer item para expandir e ver o score de confiança e a análise completa da IA, com animação suave de abertura
+- **Estilos premium** para a caixa de detalhe: gradiente sutil, labels em maiúsculo com ícone azul, separador elegante e glassmorphism na caixa de texto
 
 ### 🗂️ Sidebar de Navegação
 - Menu lateral com glassmorphism
@@ -149,8 +150,8 @@ IA-Phishing/
 │   └── index.html            # Template principal (Analisador + Estatísticas)
 │
 ├── static/
-│   ├── style.css             # Estilos customizados (550+ linhas)
-│   └── script.js             # Lógica frontend (400+ linhas)
+│   ├── style.css             # Estilos customizados (630+ linhas)
+│   └── script.js             # Lógica frontend (450+ linhas)
 │
 └── models/                   # Diretório para modelos de IA (futuro)
 ```
@@ -263,6 +264,13 @@ O agente de visão (`vision_agent.py`) é atualmente o mais limitado — ele ver
 
 **Razão:** Manter o protótipo leve e funcional. A integração com modelos de visão computacional está planejada para a próxima fase.
 
+### 6. Função de Toggle do Histórico Não Definida
+O HTML dinâmico dos cards do histórico chamava `toggleHistoryDetail(index)` via atributo `onclick`, mas essa função nunca havia sido declarada no `script.js`. Como resultado, clicar na seta (▼) de qualquer item do histórico não produzia nenhum efeito visível para o usuário.
+
+**Como foi resolvido:** O agente identificou a função ausente ao inspecionar o `script.js` e adicionou a implementação completa com toggle de `display` e rotação do chevron via `style.transform`.
+
+**Aprendizado:** Funções chamadas via `onclick` em HTML gerado dinamicamente devem ser sempre declaradas no escopo global (`window.toggleHistoryDetail = ...`) para serem acessíveis fora do escopo de módulos.
+
 ---
 
 ## 🤖 Uso do Agente de Codificação
@@ -285,6 +293,8 @@ O desenvolvimento seguiu uma abordagem **iterativa e incremental**, utilizando o
 | **7. Paginação** | "Mostre apenas 2 itens com botão Ver Mais" | Implementou paginação com toggle |
 | **8. Estatísticas** | "Gere a página de estatísticas" (screenshot de referência) | Criou endpoint + HTML + CSS + JS completos |
 | **9. Sidebar** | "Adicione botão para abrir/fechar menu lateral" | Adicionou toggle + close button |
+| **10. Bug Fix Histórico** | "Clico na seta mas não aparece o texto" | Diagnosticou função `toggleHistoryDetail` ausente e a implementou |
+| **11. Estilo Histórico** | "Deixe essas caixas de textos mais bonitas" | Adicionou 70+ linhas de CSS premium para as caixas de detalhes |
 
 ### Extensão do Uso
 
