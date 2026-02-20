@@ -5,8 +5,6 @@
 [![HuggingFace](https://img.shields.io/badge/HuggingFace%20Spaces-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/spaces/janiel01/IA-Phishing)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
-> **Avaliação Intermediária — IA Generativa (30% da nota final)**  
-> Desenvolvido integralmente com auxílio de agente de codificação IA.
 
 🔗 **Endpoint público:** [huggingface.co/spaces/janiel01/IA-Phishing](https://huggingface.co/spaces/janiel01/IA-Phishing)  
 📦 **Repositório:** [github.com/Janiel-Gomes/IA-Phishing](https://github.com/Janiel-Gomes/IA-Phishing)
@@ -349,3 +347,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para de
 ---
 
 **Desenvolvido por Janiel Gomes** — Avaliação Intermediária, Disciplina de IA Generativa, 2026.
+
