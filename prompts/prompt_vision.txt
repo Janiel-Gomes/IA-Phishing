@@ -1,0 +1,3 @@
+Analise esta imagem que é um screenshot ou elemento visual de um site/e-mail. Identifique se há uso não autorizado de logos de marcas conhecidas, formulários de login falsificados ou qualquer tentativa de se passar por uma entidade legítima.
+
+Responda apenas com o JSON estruturado.

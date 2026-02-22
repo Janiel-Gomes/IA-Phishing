@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import logging
 import os
+import json
 
 # Configuração de logging
 logging.basicConfig(
@@ -28,6 +29,14 @@ CORS(app)
 # Banco de Dados
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path.replace('\\', '/')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 db = SQLAlchemy(app)
 
 class ScannedURL(db.Model):
@@ -58,6 +67,9 @@ from agents.orchestrator import PhishingOrchestrator
 
 # Inicializar o Orquestrador Multi-Agente
 orchestrator = PhishingOrchestrator()
+
+# Armazenar a última análise em memória (apenas para o chat interativo neste projeto acadêmico)
+last_analysis_context = {}
 
 @app.route('/')
 def index():
@@ -98,6 +110,10 @@ def predict():
         confidence = results['risk_score']
         description = results['summary']
 
+        # Atualizar contexto para o chat
+        global last_analysis_context
+        last_analysis_context = results
+
         # Salvar no Banco de Dados (usamos a URL ou um placeholder se for só texto/imagem)
         record_url = url if url else f"Analysis: {datetime.now().strftime('%H:%M:%S')}"
         try:
@@ -126,6 +142,25 @@ def predict():
         logger.error(f"Erro ao processar requisição multi-modal: {e}")
         return jsonify({'error': 'Erro interno do servidor.'}), 500
 
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.get_json()
+        user_query = data.get('query', '').strip()
+        
+        if not user_query:
+            return jsonify({'error': 'Mensagem vazia.'}), 400
+            
+        if not last_analysis_context:
+            return jsonify({'answer': 'Por favor, realize uma análise primeiro para que eu possa explicar os resultados!'})
+
+        answer = orchestrator.chat_explanation(user_query, last_analysis_context)
+        return jsonify({'answer': answer})
+        
+    except Exception as e:
+        logger.error(f"Erro no chat: {e}")
+        return jsonify({'error': 'Erro ao processar conversa.'}), 500
+
 @app.route('/history', methods=['GET'])
 def get_history():
     try:
@@ -135,6 +170,10 @@ def get_history():
     except Exception as e:
         logger.error(f"Erro ao buscar histórico: {e}")
         return jsonify({'error': 'Erro ao buscar histórico.'}), 500
+
+@app.route('/stats_page')
+def stats_page():
+    return render_template('stats.html')
 
 @app.route('/stats', methods=['GET'])
 def get_stats():
@@ -169,4 +208,5 @@ def get_stats():
         return jsonify({'error': 'Erro ao buscar estatísticas.'}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    # Changed port to 7865 to avoid potential cache/port conflicts
+    app.run(host='0.0.0.0', port=7865, debug=True)

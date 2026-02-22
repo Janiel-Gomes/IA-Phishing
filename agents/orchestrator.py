@@ -2,7 +2,9 @@ from agents.url_agent import URLLexicalAgent
 from agents.text_agent import NLPTextAgent
 from agents.html_agent import HTMLStructuralAgent
 from agents.vision_agent import VisionAgent
+from agents.llm_client import llm_client
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -96,3 +98,20 @@ class PhishingOrchestrator:
             "score": final_score,
             "summary": summary
         }
+
+    def chat_explanation(self, user_query, analysis_context):
+        """
+        Gera uma explicação baseada no contexto da análise e na pergunta do usuário.
+        """
+        prompt_vars = {
+            "user_query": user_query,
+            "context": json.dumps(analysis_context, indent=2, ensure_ascii=False)
+        }
+        
+        # Usamos um prompt específico para o chat
+        response = llm_client.analyze("prompt_chat.txt", prompt_vars)
+        
+        if response and "answer" in response:
+            return response["answer"]
+        
+        return "Opa, minha inteligência (Gemini) está um pouco sobrecarregada agora. Por favor, aguarde uns 30 segundos e tente me perguntar novamente!"

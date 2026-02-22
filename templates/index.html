@@ -1,374 +1,151 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA-Phishing | Detector de Sites Maliciosos</title>
-
+    <title>IA-Phishing</title>
     <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=gpt-1.1">
 </head>
 
 <body>
 
-    <nav class="sidebar glass">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="logo mb-0">
-                <i class="fas fa-microchip"></i>
-                <span>IA-Phishing</span>
-            </div>
-            <button id="sidebar-close" class="glass rounded-circle d-flex align-items-center justify-content-center"
-                style="width: 36px; height: 36px; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; flex-shrink: 0;">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <ul class="nav-links">
-            <li class="nav-item">
-                <a href="#" id="nav-analyzer" class="nav-link active">
-                    <i class="fas fa-search-shield"></i>
-                    <span>Analisador</span>
-                </a>
-            </li>
-
-            <li class="nav-item">
-                <a href="#" id="nav-stats" class="nav-link">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Estatísticas</span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="mt-auto">
-            <div class="glass p-3 rounded-4" style="font-size: 0.8rem;">
-                <p class="mb-2 text-muted">Proteção ativa via IA</p>
-                <div class="d-flex align-items-center gap-2">
-                    <div style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></div>
-                    <span>Sistema Online</span>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="header-top d-flex justify-content-between align-items-center mb-4">
+                    <button class="btn btn-sidebar-toggle"><i data-lucide="sidebar"></i></button>
+                    <button class="btn btn-new-chat-gpt" id="new-chat-btn"><i data-lucide="square-pen"></i></button>
                 </div>
-            </div>
-        </div>
-    </nav>
 
-    <main class="main-content">
-        <header class="w-100 d-flex justify-content-between align-items-center mb-5">
-            <button id="sidebar-toggle"
-                class="sidebar-toggle-btn glass rounded-circle d-flex align-items-center justify-content-center"
-                style="width: 45px; height: 45px; border: 1px solid var(--border); color: var(--text-main); cursor: pointer;">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="d-flex align-items-center gap-3">
-                <div class="glass p-2 px-3 rounded-pill" style="font-size: 0.85rem;">
-                    <i class="fas fa-globe me-2"></i> Português
-                </div>
-                <div class="glass rounded-circle p-2 d-flex align-items-center justify-content-center"
-                    style="width: 40px; height: 40px;">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-            </div>
-        </header>
-
-        <section class="hero-section">
-            <h1>Como posso ajudar na sua <span style="color: var(--primary)">segurança?</span></h1>
-            <p class="text-muted mb-5">Analise URLs, textos, códigos ou imagens instantaneamente com IA.</p>
-
-            <div class="analyzer-container">
-                <div class="omni-input-wrapper glass">
-                    <div class="dropdown">
-                        <button class="btn-omni-plus" id="omni-plus-btn">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <div class="omni-menu glass shadow-lg" id="omni-menu">
-                            <button class="omni-menu-item" data-mode="url">
-                                <i class="fas fa-link text-primary"></i>
-                                <span>Analisar URL/Link</span>
-                            </button>
-                            <button class="omni-menu-item" data-mode="text">
-                                <i class="fas fa-file-alt text-success"></i>
-                                <span>Conteúdo de E-mail</span>
-                            </button>
-                            <button class="omni-menu-item" data-mode="html">
-                                <i class="fas fa-code text-warning"></i>
-                                <span>Código HTML</span>
-                            </button>
-                            <label class="omni-menu-item mb-0" style="cursor: pointer;">
-                                <i class="fas fa-image text-danger"></i>
-                                <span>Carregar Imagem</span>
-                                <input type="file" id="image-upload" accept="image/*" class="d-none">
-                            </label>
-                        </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-item">
+                        <i data-lucide="message-square"></i> Novo chat
                     </div>
 
-                    <form id="url-form" class="w-100 d-flex gap-2">
-                        <div class="input-dynamic-area w-100">
-                            <input type="text" id="url-input" class="omni-field"
-                                placeholder="Insira o link para análise..." required autocomplete="off">
-                            <textarea id="text-input" class="omni-field d-none" rows="3"
-                                placeholder="Cole aqui o conteúdo suspeito..."></textarea>
-                            <textarea id="html-input" class="omni-field d-none" rows="3"
-                                placeholder="Cole aqui o código HTML..."></textarea>
+                    <!-- Stats Button Requested by User -->
+                    <button class="btn btn-stats-link w-100 mt-3"
+                        onclick="window.location.href='/stats_page' || alert('Página de Estatísticas em desenvolvimento')">
+                        <i data-lucide="bar-chart-2" class="me-2"></i> Estatísticas
+                    </button>
+                </nav>
+            </div>
 
-                            <div id="image-preview" class="d-none mt-2 p-2 glass rounded-3">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="text-muted small"><i class="fas fa-image me-1"></i> Imagem
-                                        selecionada</span>
-                                    <button type="button" class="btn-close btn-close-white small"
-                                        id="remove-image"></button>
-                                </div>
-                                <img src="" id="preview-img" style="max-height: 150px; border-radius: 8px;">
+            <div class="sidebar-content">
+                <div class="history-section">
+                    <div class="history-label mt-4 px-3 mb-2">Histórico</div>
+                    <div id="history-list" class="px-2">
+                        <!-- History items injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-gpt">
+                    <div class="avatar-mini">JR</div>
+                    <div class="user-info">
+                        <span class="user-name">Janiel Rodrigues</span>
+                        <span class="user-plan">Free</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="chat-header-gpt px-4 py-2">
+                <div class="header-brand-container d-flex align-items-center">
+                    <div class="gpt-version-selector ms-5">IA-Phishing<i data-lucide="chevron-down"
+                            class="ms-1 h-12 w-12 opacity-50"></i></div>
+                </div>
+
+                <div class="header-actions ms-auto d-flex align-items-center gap-3">
+                    <!-- Language Toggle -->
+                    <button class="btn btn-header-icon" id="lang-toggle-btn" title="Mudar Idioma">
+                        <span class="fw-bold" style="font-size: 0.8rem;">PT</span>
+                    </button>
+                    <!-- Dark Mode Toggle -->
+                    <button class="btn btn-header-icon" id="dark-mode-btn" title="Modo Escuro">
+                        <i data-lucide="moon"></i>
+                    </button>
+                    <!-- Share (Original) -->
+                    <button class="btn btn-header-icon">
+                        <i data-lucide="share" class="opacity-50"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-wrapper" id="chat-wrapper">
+                <!-- Centered Welcome Prompt -->
+                <div class="welcome-section-gpt" id="welcome-section">
+                    <h1>Como posso ajudar?</h1>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="chat-messages-gpt">
+                    <!-- Results and messages -->
+                </div>
+            </div>
+
+            <!-- Floating Omni-Box -->
+            <div class="input-area-container-gpt">
+                <div class="omni-pill mx-auto">
+                    <form id="analysis-form" class="w-100">
+                        <div class="input-container-inner">
+                            <button type="button" class="btn btn-icon btn-plus"><i data-lucide="plus"></i></button>
+                            <textarea id="main-input" class="form-control" placeholder="Pergunte alguma coisa"
+                                rows="1"></textarea>
+                            <div class="action-buttons-gpt">
+                                <button type="button" class="btn btn-icon btn-mic"><i data-lucide="mic"></i></button>
+                                <button type="submit" class="btn btn-send-gpt" id="send-btn">
+                                    <i data-lucide="arrow-up"></i>
+                                </button>
                             </div>
                         </div>
-                        <button type="submit" id="analyze-btn" class="btn-omni-send">
-                            <i class="fas fa-arrow-up"></i>
-                        </button>
+                        <!-- Hidden Mode Selectors (Automated check) -->
+                        <div class="mode-badges mt-2 d-none">
+                            <input type="file" id="image-upload" class="d-none" accept="image/*">
+                            <span id="current-mode-badge" class="badge bg-light text-dark border">Modo: URL</span>
+                        </div>
                     </form>
                 </div>
-
-                <div id="loading" class="loading-spinner mx-auto"></div>
-
-                <div id="result-card" class="result-card glass-card text-start">
-                    <!-- Result content injected via JS -->
+                <div class="disclaimer-gpt text-center mt-3">
+                    Ao analisar, você concorda com nossos termos. A IA pode falhar.
                 </div>
             </div>
-        </section>
-
-        <section id="history-section" class="history-section mt-5 w-100" style="max-width: 800px;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="h4 mb-0"><i class="fas fa-history me-2 text-primary"></i> Buscas Recentes</h2>
-                <span class="badge glass text-muted fw-normal" style="font-size: 0.75rem;">Últimas 10 análises</span>
-            </div>
-
-            <div id="history-container" class="history-list d-flex flex-column gap-3">
-                <!-- History items injected via JS -->
-                <div class="text-center py-5 text-muted glass rounded-4">
-                    <i class="fas fa-search mb-2 d-block fs-3"></i>
-                    <p class="mb-0">Nenhuma busca recente encontrada.</p>
-                </div>
-            </div>
-
-            <div id="view-more-container" class="text-center mt-3 d-none">
-                <button id="view-more-btn" class="btn-view-more">
-                    Ver Mais <i class="fas fa-chevron-down ms-1"></i>
-                </button>
-            </div>
-        </section>
-
-
-    </main>
-
-    <!-- Stats Page (hidden by default) -->
-    <main class="main-content d-none" id="stats-page">
-        <header class="w-100 d-flex justify-content-between align-items-center mb-5">
-            <div class="d-flex align-items-center gap-2">
-                <button class="sidebar-toggle-btn glass rounded-circle d-flex align-items-center justify-content-center"
-                    style="width: 45px; height: 45px; border: 1px solid var(--border); color: var(--text-main); cursor: pointer;">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <button id="stats-back-btn"
-                    class="glass rounded-circle d-flex align-items-center justify-content-center"
-                    style="width: 45px; height: 45px; border: 1px solid var(--border); color: var(--text-main); cursor: pointer;"
-                    title="Voltar ao Analisador">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-            </div>
-            <h2 class="h5 mb-0"><i class="fas fa-chart-line me-2 text-primary"></i> Estatísticas</h2>
-            <div></div>
-        </header>
-
-        <div class="stats-container" style="max-width: 800px; margin: 0 auto;">
-            <div class="row g-4 mb-4">
-                <div class="col-6 col-md-3">
-                    <div class="stat-card glass text-center">
-                        <div class="stat-icon" style="background: rgba(37, 99, 235, 0.15); color: var(--primary);">
-                            <i class="fas fa-chart-bar"></i>
-                        </div>
-                        <p class="stat-label">TOTAL DE ANÁLISES</p>
-                        <h3 class="stat-value" id="stat-total">0</h3>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card glass text-center">
-                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <p class="stat-label">PHISHING DETECTADO</p>
-                        <h3 class="stat-value" id="stat-phishing">0</h3>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card glass text-center">
-                        <div class="stat-icon" style="background: rgba(34, 197, 94, 0.15); color: var(--success);">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <p class="stat-label">CONTEÚDO SEGURO</p>
-                        <h3 class="stat-value" id="stat-safe">0</h3>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card glass text-center">
-                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <p class="stat-label">TAXA DE DETECÇÃO</p>
-                        <h3 class="stat-value" id="stat-rate">0%</h3>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass rounded-4 p-4 mb-4">
-                <h5 class="mb-4"><i class="fas fa-shield-alt me-2 text-primary"></i> Distribuição de Resultados</h5>
-                <div id="stats-breakdown">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="stat-bar-label">Phishing</span>
-                        <div class="stat-bar-track">
-                            <div class="stat-bar-fill" id="bar-phishing" style="width: 0%; background: var(--danger);">
-                            </div>
-                        </div>
-                        <span class="stat-bar-value" id="bar-phishing-val">0</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="stat-bar-label">Suspeito</span>
-                        <div class="stat-bar-track">
-                            <div class="stat-bar-fill" id="bar-suspect" style="width: 0%; background: #f59e0b;"></div>
-                        </div>
-                        <span class="stat-bar-value" id="bar-suspect-val">0</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="stat-bar-label">Seguro</span>
-                        <div class="stat-bar-track">
-                            <div class="stat-bar-fill" id="bar-safe" style="width: 0%; background: var(--success);">
-                            </div>
-                        </div>
-                        <span class="stat-bar-value" id="bar-safe-val">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass rounded-4 p-4">
-                <h5 class="mb-4"><i class="fas fa-clock me-2 text-primary"></i> Últimas Análises</h5>
-                <div id="stats-timeline" class="d-flex flex-column gap-2">
-                    <p class="text-muted text-center">Carregando...</p>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Disclaimer Popup -->
-    <div id="disclaimer-overlay" style="
-        position: fixed; inset: 0; z-index: 9999;
-        background: rgba(15, 23, 42, 0.75);
-        backdrop-filter: blur(8px);
-        display: flex; align-items: center; justify-content: center;
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease;
-    ">
-        <div style="
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            max-width: 480px;
-            width: 100%;
-            padding: 2.5rem 2rem;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.15);
-            text-align: center;
-            animation: popupSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        ">
-            <!-- Icon -->
-            <div style="
-                width: 72px; height: 72px;
-                background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(37,99,235,0.05));
-                border: 2px solid rgba(37,99,235,0.25);
-                border-radius: 20px;
-                display: flex; align-items: center; justify-content: center;
-                margin: 0 auto 1.5rem;
-                font-size: 2rem; color: var(--primary);
-            ">
-                <i class="fas fa-flask"></i>
-            </div>
-
-            <!-- Title -->
-            <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
-                Projeto Acadêmico
-            </h2>
-            <p
-                style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 1.5rem;">
-                Apenas para fins de teste
-            </p>
-
-            <!-- Body -->
-            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1rem;">
-                Este é um <strong style="color: var(--text-main);">protótipo acadêmico</strong> desenvolvido para fins
-                educacionais na disciplina de <strong style="color: var(--text-main);">IA Generativa</strong>.
-            </p>
-            <p style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.65; margin-bottom: 2rem;">
-                Os resultados gerados pelos agentes são baseados em <strong style="color: var(--text-main);">heurísticas
-                    e regras simples</strong>, não em modelos de IA reais. <span
-                    style="color: #ef4444; font-weight: 600;">Não utilize para fins de segurança reais.</span>
-            </p>
-
-            <!-- Tags -->
-            <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem;">
-                <span
-                    style="background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); color: var(--primary); border-radius: 100px; padding: 4px 14px; font-size: 0.75rem; font-weight: 600;">
-                    <i class="fas fa-graduation-cap me-1"></i> Acadêmico
-                </span>
-                <span
-                    style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; border-radius: 100px; padding: 4px 14px; font-size: 0.75rem; font-weight: 600;">
-                    <i class="fas fa-exclamation-triangle me-1"></i> Não profissional
-                </span>
-                <span
-                    style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); color: var(--success); border-radius: 100px; padding: 4px 14px; font-size: 0.75rem; font-weight: 600;">
-                    <i class="fas fa-code me-1"></i> Open Source
-                </span>
-            </div>
-
-            <!-- Button -->
-            <button id="disclaimer-close-btn"
-                onclick="document.getElementById('disclaimer-overlay').style.display='none'" style="
-                width: 100%;
-                padding: 14px;
-                background: var(--primary);
-                color: white;
-                border: none;
-                border-radius: 14px;
-                font-size: 0.95rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                font-family: 'Outfit', sans-serif;
-            " onmouseover="this.style.background='var(--primary-hover)'; this.style.transform='translateY(-1px)'"
-                onmouseout="this.style.background='var(--primary)'; this.style.transform='translateY(0)'">
-                Entendi, continuar <i class="fas fa-arrow-right ms-2"></i>
-            </button>
-        </div>
+        </main>
     </div>
 
-    <style>
-        @keyframes popupSlideIn {
-            from {
-                opacity: 0;
-                transform: scale(0.85) translateY(20px);
-            }
+    <!-- ChatGPT Style Result Template -->
+    <template id="result-template">
+        <div class="result-entry-gpt">
+            <div class="gpt-avatar"><i data-lucide="shield-check"></i></div>
+            <div class="gpt-response-content">
+                <h4 class="verdict-title mb-2"></h4>
+                <div class="confidence-meter mb-3">
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block confidence-text"></small>
+                </div>
+                <p class="summary-text"></p>
 
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-    </style>
+                <div class="details-grid mt-4 row g-3">
+                    <!-- Agent boxes -->
+                </div>
+            </div>
+        </div>
+    </template>
 
-    <!-- Scripts -->
+    <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}?v=2.0"></script>
-    <script>
-        // Close popup when clicking outside the card
-        document.getElementById('disclaimer-overlay').addEventListener('click', function (e) {
-            if (e.target === this) this.style.display = 'none';
-        });
-    </script>
+    <script>lucide.createIcons();</script>
+    <script src="{{ url_for('static', filename='script.js') }}?v=gpt-1.1"></script>
 </body>
 
 </html>

@@ -1,0 +1,6 @@
+Analise o seguinte texto em busca de padrões de phishing, como senso de urgência, ameaças, erros gramaticais propositais ou pedidos de dados sensíveis.
+
+TEXTO:
+{{text}}
+
+Responda apenas com o JSON estruturado.

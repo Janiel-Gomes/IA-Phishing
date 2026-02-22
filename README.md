@@ -5,6 +5,8 @@
 [![HuggingFace](https://img.shields.io/badge/HuggingFace%20Spaces-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/spaces/janiel01/IA-Phishing)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
+> **Avaliação Intermediária — IA Generativa (30% da nota final)**  
+> Desenvolvido integralmente com auxílio de agente de codificação IA.
 
 🔗 **Endpoint público:** [huggingface.co/spaces/janiel01/IA-Phishing](https://huggingface.co/spaces/janiel01/IA-Phishing)  
 📦 **Repositório:** [github.com/Janiel-Gomes/IA-Phishing](https://github.com/Janiel-Gomes/IA-Phishing)
@@ -47,18 +49,52 @@ Cada agente gera um **score de risco independente**, e um **orquestrador** conso
 
 ---
 
-## 🔮 Como a IA Será Integrada no Futuro
+## 🧠 Decisões de Engenharia de LLM
 
-Atualmente, os agentes utilizam **heurísticas e análises baseadas em regras**. Na próxima etapa, cada agente será aprimorado com modelos de IA reais:
+Nesta fase final, o projeto evoluiu de heurísticas simples para uma integração robusta com **IA Generativa (Gemini 1.5 Flash)**. Abaixo estão detalhadas as decisões técnicas tomadas:
 
-| Agente | Integração Futura |
-|--------|-------------------|
-| URL Lexical | Modelo BERT fine-tuned (`ealvaradob/bert-finetuned-phishing`) para classificação binária |
-| NLP Text | LLM (GPT/Claude) via API para análise semântica de e-mails suspeitos |
-| HTML Structural | Modelo treinado em features extraídas de HTML para detecção de páginas clonadas |
-| Vision | OCR (Tesseract/PaddleOCR) + CLIP para detectar logos falsificados e texto em imagens |
+### 1. Escolha do Framework e Modelo
+- **Framework**: Utilizado o **Google Generative AI SDK** (Python). Optei por chamadas diretas via SDK em vez de LangChain para manter o projeto leve e ter controle total sobre o fluxo de mensagens e tratamento de erros.
+- **Modelo**: `gemini-1.5-flash`. Escolhido pelo excelente custo-benefício, baixa latência e capacidade multimodal (essencial para o `VisionAgent`).
+- **Parâmetros**: 
+  - `temperature: 0.0`: Para garantir respostas determinísticas e técnicas.
+  - `top_p: 0.95`: Para manter a coerência sem perder nuances.
+  - `response_mime_type: application/json`: Para garantir saídas estruturadas que o backend possa parsear.
 
-A arquitetura multi-agente já está preparada para receber esses modelos sem alterar a interface.
+### 2. Estratégia de Prompting
+- **System Prompt**: Define a persona (Especialista em Cybersecurity) e o esquema de saída JSON obrigatório. Localizado em `prompts/system_prompt.txt`.
+- **Chain-of-Thought (implícito)**: Os prompts instruem o modelo a analisar pontos específicos (formulários, urgência, logos) antes de gerar o score final.
+- **Structured Outputs**: Uso nativo do Gemini para garantir que cada agente retorne `score`, `result` e `findings` de forma consistente.
+
+### 3. Agentes e Ferramentas
+- **Text Agent**: Analisa semântica, tom de voz e intenção do texto.
+- **HTML Agent**: Recebe snippets do código fonte para identificar exfiltração de dados e ofuscação.
+- **Vision Agent**: Analisa screenshots em busca de brand impersonation e UI suspeita.
+- **Fallback Heurístico**: Todos os agentes mantêm uma lógica de fallback baseada em regras caso a API não esteja disponível, garantindo resiliência.
+
+### 4. Trade-offs: Pago vs. Local
+- **Por que Gemini (Pago/API)?**: A capacidade de visão multimodal do Gemini 1.5 Flash é superior a modelos locais que caberiam em hardware comum. O tool calling (via JSON mode) é extremamente robusto.
+- **Viabilidade de Modelo Local**: Seria possível usar **Ollama** com `Llama-3` ou `Mistral` para os agentes de Texto e HTML. No entanto, perderíamos a facilidade da análise de imagem nativa (necessitaria de modelos Vision-Language locais bem mais pesados) e o deploy no Hugging Face Spaces seria impossível no tier gratuito devido ao consumo de RAM/GPU.
+
+---
+
+## 🏗️ Arquitetura Atualizada
+
+```mermaid
+graph TD
+    User((Usuário)) --> WebUI[Web Interface]
+    WebUI --> App[Flask App]
+    App --> Orch[Orquestrador]
+    Orch --> URL[URL Agent - Regras/WHOIS]
+    Orch --> Text[NLP Agent - Gemini/LLM]
+    Orch --> HTML[HTML Agent - Gemini/LLM]
+    Orch --> Vision[Vision Agent - Gemini Vision]
+    Text -.-> LLM((Gemini API))
+    HTML -.-> LLM
+    Vision -.-> LLM
+    URL --> History[(SQL History)]
+    App --> Stats[Dashboard de Estatísticas]
+```
 
 ---
 
@@ -170,42 +206,30 @@ IA-Phishing/
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 Tecnologias Utilizadas (Atualizado)
 
-| Camada | Tecnologia | Propósito |
-|--------|-----------|-----------|
-| **Backend** | Python 3.10, Flask | Servidor web, API REST |
-| **Banco de Dados** | SQLite + Flask-SQLAlchemy | Persistência do histórico |
-| **Frontend** | HTML5, CSS3, JavaScript ES6+ | Interface do usuário |
-| **UI Framework** | Bootstrap 5 | Grid system, utilitários |
-| **Ícones** | Font Awesome 6 | Iconografia |
-| **Análise** | BeautifulSoup4, Requests | Parsing HTML, requisições HTTP |
-| **Deploy** | Docker + Hugging Face Spaces | Endpoint público permanente |
-| **IA (futuro)** | Transformers, Torch | Modelos BERT para classificação |
+| Camada | Tecnologia |
+|--------|-----------|
+| **LLM Interface** | Gemini SDK, `google-generativeai` |
+| **Ambiente** | `python-dotenv` para gestão de chaves |
+| **Backend/UI** | Flask, SQLAlchemy, Bootstrap |
+| **Parsing** | BeautifulSoup4, regex |
 
 ---
 
 ## 🛠️ Configuração e Instalação
 
-### Pré-requisitos
-- Python 3.8 ou superior
+### Adicionando a Chave de API
+Para que o detector funcione com IA real:
+1. Crie um arquivo `.env` na raiz do projeto.
+2. Adicione sua chave: `GEMINI_API_KEY=sua_chave_aqui`
 
 ### Passo a Passo
-
 ```bash
-# 1. Clonar o repositório
-git clone https://github.com/Janiel-Gomes/IA-Phishing.git
-cd IA-Phishing
-
-# 2. Criar ambiente virtual
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux/macOS
-
-# 3. Instalar dependências
+# 1. Instalar novas dependências
 pip install -r requirements.txt
 
-# 4. Iniciar a aplicação
+# 2. Rodar a aplicação
 python app.py
 ```
 
@@ -346,5 +370,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para de
 
 ---
 
-**Desenvolvido por Janiel Gomes** — Avaliação Intermediária, Disciplina de IA Generativa, 2026.
-
+**Desenvolvido por Janiel Gomes** — Avaliação Final, Disciplina de IA Generativa, 2026.

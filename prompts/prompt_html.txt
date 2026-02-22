@@ -1,0 +1,7 @@
+Analise a estrutura HTML abaixo. Procure por formulários que enviam dados para domínios diferentes da URL original, elementos ocultos que podem esconder código malicioso e campos de senha em conexões não seguras.
+
+URL ORIGINAL: {{url}}
+CONTEÚDO HTML:
+{{html}}
+
+Responda apenas com o JSON estruturado.
