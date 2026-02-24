@@ -15,6 +15,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const imgBtn = document.querySelector('.btn-plus');
     const imgInput = document.getElementById('image-upload');
 
+    // --- Model Selection ---
+    let selectedModel = 'ollama';
+    const modelDropdownItems = document.querySelectorAll('.dropdown-item[data-model]');
+    const activeModelName = document.getElementById('active-model-name');
+
+    modelDropdownItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            selectedModel = item.getAttribute('data-model');
+
+            // Update UI
+            modelDropdownItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            const friendlyName = item.querySelector('.fw-bold').innerText;
+            activeModelName.innerText = friendlyName.split(' ')[0]; // Show "Ollama" or "OpenAI"
+
+            if (window.lucide) lucide.createIcons();
+        });
+    });
+
     // --- Sidebar Toggle ---
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', () => {
@@ -78,10 +99,52 @@ document.addEventListener('DOMContentLoaded', () => {
         imgBtn.addEventListener('click', () => imgInput.click());
     }
 
+    // --- Image Upload (Triggered by Plus icon or Paste) ---
+    if (imgBtn) {
+        imgBtn.addEventListener('click', () => imgInput.click());
+    }
+
+    const currentModeBadge = document.getElementById('current-mode-badge');
+    const modeBadgesContainer = document.querySelector('.mode-badges');
+
+    function updateImageBadge(fileName) {
+        if (fileName) {
+            modeBadgesContainer.classList.remove('d-none');
+            currentModeBadge.innerHTML = `<i data-lucide="image" class="me-1 h-12 w-12"></i> ${fileName}`;
+            currentModeBadge.classList.replace('bg-light', 'bg-primary');
+            currentModeBadge.classList.replace('text-dark', 'text-white');
+        } else {
+            modeBadgesContainer.classList.add('d-none');
+            currentModeBadge.innerHTML = 'Modo: URL';
+            currentModeBadge.classList.replace('bg-primary', 'bg-light');
+            currentModeBadge.classList.replace('text-white', 'text-dark');
+        }
+        if (window.lucide) lucide.createIcons();
+    }
+
     imgInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            alert(`Imagem "${file.name}" selecionada para análise.`);
+            updateImageBadge(file.name);
+        }
+    });
+
+    // Support for Pasting Images (Ctrl+V)
+    mainInput.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const blob = items[i].getAsFile();
+
+                // Assign to file input using DataTransfer
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(blob);
+                imgInput.files = dataTransfer.files;
+
+                updateImageBadge("Imagem colada");
+                e.preventDefault(); // Don't paste the image text/junk if any
+                break;
+            }
         }
     });
 
@@ -107,9 +170,21 @@ document.addEventListener('DOMContentLoaded', () => {
         welcomeSection.style.display = 'none';
 
         // Use standard ChatGPT-style User Message
-        appendUserMessage(userInput || "[Imagem suspensa]");
+        if (hasImage) {
+            const file = imgInput.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                appendUserMessage(userInput || "[Análise de Imagem]", event.target.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            appendUserMessage(userInput);
+        }
+
         mainInput.value = '';
         mainInput.style.height = 'auto';
+        imgInput.value = ''; // Clear file input after use
+        updateImageBadge(null); // Clear the UI badge
 
         // Logic: Is this a scan or a question?
         const isUrl = /^(http|https):\/\/[^ "]+$/.test(userInput);
@@ -117,19 +192,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If we have context and it looks like a question, call /chat
         if (hasContext && !isUrl && !isLongText && !hasImage) {
+            const loadingId = appendLoadingMessage();
             try {
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: userInput })
+                    body: JSON.stringify({
+                        query: userInput,
+                        model: selectedModel
+                    })
                 });
                 const data = await response.json();
+                removeLoadingMessage(loadingId);
                 if (data.answer) {
                     appendAiMessage(data.answer);
                 } else {
                     throw new Error(data.error || "Sem resposta");
                 }
             } catch (err) {
+                removeLoadingMessage(loadingId);
                 appendAiMessage("Erro no chat: " + err.message);
             }
             return;
@@ -140,7 +221,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isUrl) formData.append('url', userInput);
         else formData.append('text', userInput);
         if (hasImage) formData.append('image', imgInput.files[0]);
+        formData.append('model', selectedModel);
 
+        const loadingId = appendLoadingMessage();
         try {
             const response = await fetch('/predict', {
                 method: 'POST',
@@ -148,20 +231,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await response.json();
 
+            removeLoadingMessage(loadingId);
+
             if (data.error) throw new Error(data.error);
 
             showResultCard(data);
             hasContext = true; // Set context after first successful scan
             loadHistory();
         } catch (err) {
+            removeLoadingMessage(loadingId);
             appendAiMessage("Erro na análise: " + err.message);
         }
     });
 
-    function appendUserMessage(text) {
+    function appendUserMessage(text, imgSrc = null) {
         const div = document.createElement('div');
         div.className = 'message-bubble-user-gpt mb-4 px-4 text-end';
-        div.innerHTML = `<span class="bg-light p-3 rounded-4 d-inline-block shadow-sm" style="max-width: 80%;">${text}</span>`;
+
+        let content = `<span class="bg-light p-3 rounded-4 d-inline-block shadow-sm" style="max-width: 80%; text-align: left;">`;
+        if (imgSrc) {
+            content += `<img src="${imgSrc}" class="img-fluid rounded-3 mb-2 d-block" style="max-height: 200px; width: auto;">`;
+        }
+        content += `${text}</span>`;
+
+        div.innerHTML = content;
         chatMessages.appendChild(div);
         scrollToBottom();
     }
@@ -176,6 +269,26 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.appendChild(div);
         if (window.lucide) lucide.createIcons();
         scrollToBottom();
+    }
+
+    function appendLoadingMessage() {
+        const id = 'loading-' + Date.now();
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'result-entry-gpt mb-5 opacity-50';
+        div.innerHTML = `
+            <div class="gpt-avatar"><i data-lucide="loader"></i></div>
+            <div class="gpt-response-content mt-1" style="line-height: 1.6;">A IA está pensando... isso pode levar alguns segundos.</div>
+        `;
+        chatMessages.appendChild(div);
+        if (window.lucide) lucide.createIcons();
+        scrollToBottom();
+        return id;
+    }
+
+    function removeLoadingMessage(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
     }
 
     function showResultCard(data) {

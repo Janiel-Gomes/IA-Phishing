@@ -4,4 +4,11 @@ flask-sqlalchemy
 requests
 beautifulsoup4
 python-dotenv
-google-generativeai
+langchain
+langchain-community
+langchain-core
+langchain-ollama
+langchain-chroma
+sentence-transformers
+pydantic
+langchain-openai

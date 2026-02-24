@@ -1,5 +1,6 @@
 import re
 import logging
+import time as _time
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 
@@ -13,6 +14,10 @@ except ImportError:
     WHOIS_AVAILABLE = False
     logger.warning("python-whois não instalado. Análise WHOIS desativada.")
 
+# Cache WHOIS com TTL de 1 hora (evita lookups repetidos)
+_whois_cache = {}
+_WHOIS_CACHE_TTL = 3600
+
 
 class URLLexicalAgent:
     def __init__(self):
@@ -22,7 +27,15 @@ class URLLexicalAgent:
         """
         Consulta WHOIS para verificar idade e dados do domínio.
         Retorna (score_adicional, findings_adicionais).
+        Usa cache com TTL de 1h para evitar lookups repetidos.
         """
+        # Verificar cache primeiro
+        if domain in _whois_cache:
+            cached_time, cached_result = _whois_cache[domain]
+            if _time.time() - cached_time < _WHOIS_CACHE_TTL:
+                logger.info(f"WHOIS cache hit para {domain}")
+                return cached_result
+
         findings = []
         score = 0.0
 
@@ -83,7 +96,10 @@ class URLLexicalAgent:
             logger.info(f"WHOIS indisponível para {domain}: {e}")
             findings.append("Informações WHOIS não disponíveis para este domínio")
 
-        return min(score, 0.6), findings
+        result = (min(score, 0.6), findings)
+        # Salvar no cache
+        _whois_cache[domain] = (_time.time(), result)
+        return result
 
     def analyze(self, url):
         """

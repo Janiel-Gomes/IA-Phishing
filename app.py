@@ -92,19 +92,19 @@ def predict():
         if 'image' in request.files:
             file = request.files['image']
             if file.filename != '':
-                # Process small images in memory or save them
                 image_data = file.read()
         elif 'image_b64' in data:
             import base64
             image_data = base64.b64decode(data['image_b64'].split(',')[-1])
 
-        logger.info(f"Analisando Multi-Modal: URL={url}, Text={bool(text)}, HTML={bool(html)}, Image={bool(image_data)}")
+        model_pref = data.get('model') # 'ollama' or 'openai'
+        logger.info(f"Analisando Multi-Modal: URL={url}, Text={bool(text)}, HTML={bool(html)}, Image={bool(image_data)}, ModelPref={model_pref}")
 
         if not any([url, text, html, image_data]):
             return jsonify({'error': 'Nenhum dado fornecido para análise.'}), 400
 
         # Executar análise multi-modal
-        results = orchestrator.analyze_full(url=url, text=text, html=html, image_data=image_data)
+        results = orchestrator.analyze_full(url=url, text=text, html=html, image_data=image_data, model_pref=model_pref)
         
         result = results['verdict']
         confidence = results['risk_score']
@@ -154,7 +154,8 @@ def chat():
         if not last_analysis_context:
             return jsonify({'answer': 'Por favor, realize uma análise primeiro para que eu possa explicar os resultados!'})
 
-        answer = orchestrator.chat_explanation(user_query, last_analysis_context)
+        model_pref = data.get('model')
+        answer = orchestrator.chat_explanation(user_query, {**last_analysis_context, 'model_pref': model_pref})
         return jsonify({'answer': answer})
         
     except Exception as e:

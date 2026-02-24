@@ -1,0 +1,12 @@
+Analise os seguintes dados de uma página web em busca de sinais de phishing.
+
+1. TEXTO do conteúdo (analise urgência, ameaças, erros gramaticais, pedidos de dados sensíveis):
+{{text}}
+
+2. ESTRUTURA HTML (procure formulários enviando para domínios diferentes, elementos ocultos, campos de senha inseguros):
+URL ORIGINAL: {{url}}
+HTML (trecho):
+{{html}}
+
+Considere AMBOS os aspectos (texto e estrutura) na sua análise unificada.
+Responda apenas com o JSON estruturado.

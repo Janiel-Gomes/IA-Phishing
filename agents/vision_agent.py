@@ -7,7 +7,7 @@ class VisionAgent:
     def __init__(self):
         self.name = "Vision Analysis Agent"
 
-    def analyze(self, image_data=None, image_path=None):
+    def analyze(self, image_data=None, image_path=None, model_pref=None):
         """
         Analisa uma imagem em busca de padrões de phishing usando LLM Vision.
         """
@@ -18,7 +18,7 @@ class VisionAgent:
             }
 
         # 1. Tentar análise com LLM Vision
-        llm_result = llm_client.analyze("prompt_vision.txt", {}, image_data=image_data)
+        llm_result = llm_client.analyze("prompt_vision.txt", {}, image_data=image_data, model_pref=model_pref)
         if llm_result:
             logger.info(f"{self.name}: Vision analysis successful.")
             llm_result["agent"] = self.name
