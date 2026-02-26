@@ -15,24 +15,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const imgBtn = document.querySelector('.btn-plus');
     const imgInput = document.getElementById('image-upload');
 
-    // --- Model Selection ---
-    let selectedModel = 'ollama';
+    // --- State & Persistence ---
+    let selectedModel = localStorage.getItem('phishing_model') || 'ollama';
+    let currentLang = localStorage.getItem('phishing_lang') || 'PT';
+    let hasContext = false;
     const modelDropdownItems = document.querySelectorAll('.dropdown-item[data-model]');
     const activeModelName = document.getElementById('active-model-name');
+
+    function applyModelSettings(model) {
+        selectedModel = model;
+        localStorage.setItem('phishing_model', model);
+
+        const item = document.querySelector(`.dropdown-item[data-model="${model}"]`);
+        if (item) {
+            modelDropdownItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            const friendlyName = item.querySelector('.fw-bold').innerText;
+            activeModelName.innerText = friendlyName.split(' ')[0];
+        }
+        if (window.lucide) lucide.createIcons();
+    }
 
     modelDropdownItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            selectedModel = item.getAttribute('data-model');
-
-            // Update UI
-            modelDropdownItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-
-            const friendlyName = item.querySelector('.fw-bold').innerText;
-            activeModelName.innerText = friendlyName.split(' ')[0]; // Show "Ollama" or "OpenAI"
-
-            if (window.lucide) lucide.createIcons();
+            applyModelSettings(item.getAttribute('data-model'));
         });
     });
 
@@ -58,40 +65,129 @@ document.addEventListener('DOMContentLoaded', () => {
     const langBtn = document.getElementById('lang-toggle-btn');
     const welcomeTitle = document.querySelector('.welcome-section-gpt h1');
 
-    // Dark Mode
+    // --- Dark Mode ---
+    function applyTheme(isDark) {
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('phishing_theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('phishing_theme', 'light');
+        }
+        if (darkBtn) {
+            darkBtn.innerHTML = isDark ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+        }
+        if (window.lucide) lucide.createIcons();
+    }
+
     if (darkBtn) {
         darkBtn.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            darkBtn.innerHTML = isDark ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
-            if (window.lucide) lucide.createIcons();
+            const isDark = !document.body.classList.contains('dark-mode');
+            applyTheme(isDark);
         });
     }
 
-    // Language
-    let currentLang = 'PT';
+    // --- Language ---
+    const welcomeTitleElement = document.querySelector('.welcome-section-gpt h1');
+
+    function applyLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('phishing_lang', lang);
+
+        const langText = langBtn ? langBtn.querySelector('span') : null;
+        if (langText) langText.innerText = lang;
+
+        if (lang === 'EN') {
+            mainInput.placeholder = "Paste a link or message here...";
+            if (welcomeTitleElement) welcomeTitleElement.innerText = "How can I help?";
+            newChatBtn.setAttribute('title', 'New Chat');
+
+            document.querySelectorAll('.suggestion-card').forEach(card => {
+                const span = card.querySelector('span');
+                if (span.innerText === "Verificar um link suspeito") {
+                    span.innerText = "Check a suspicious link";
+                    card.dataset.query = "I want to check a suspicious link";
+                    card.dataset.intent = "link";
+                } else if (span.innerText === "Analisar texto de e-mail") {
+                    span.innerText = "Analyze email text";
+                    card.dataset.query = "I want to analyze an email text";
+                    card.dataset.intent = "text";
+                } else if (span.innerText === "Dicas de segurança") {
+                    span.innerText = "Security tips";
+                    card.dataset.query = "Give me some security tips against phishing";
+                    card.dataset.intent = "tips";
+                } else if (span.innerText === "Sobre certificados SSL") {
+                    span.innerText = "About SSL certificates";
+                    card.dataset.query = "Tell me about SSL certificates";
+                    card.dataset.intent = "ssl";
+                }
+            });
+        } else {
+            mainInput.placeholder = "Cole um link ou mensagem aqui...";
+            if (welcomeTitleElement) welcomeTitleElement.innerText = "Como posso ajudar?";
+            newChatBtn.setAttribute('title', 'Novo Chat');
+
+            document.querySelectorAll('.suggestion-card').forEach(card => {
+                const span = card.querySelector('span');
+                if (span.innerText === "Check a suspicious link") {
+                    span.innerText = "Verificar um link suspeito";
+                    card.dataset.query = "Quero verificar um link suspeito";
+                    card.dataset.intent = "link";
+                } else if (span.innerText === "Analyze email text") {
+                    span.innerText = "Analisar texto de e-mail";
+                    card.dataset.query = "Quero analisar um texto de e-mail";
+                    card.dataset.intent = "text";
+                } else if (span.innerText === "Security tips") {
+                    span.innerText = "Dicas de segurança";
+                    card.dataset.query = "Me dê algumas dicas de segurança contra phishing";
+                    card.dataset.intent = "tips";
+                } else if (span.innerText === "About SSL certificates") {
+                    span.innerText = "Sobre certificados SSL";
+                    card.dataset.query = "Me fale sobre certificados SSL";
+                    card.dataset.intent = "ssl";
+                }
+            });
+        }
+    }
+
     if (langBtn) {
         langBtn.addEventListener('click', () => {
-            currentLang = currentLang === 'PT' ? 'EN' : 'PT';
-            langBtn.querySelector('span').innerText = currentLang;
-
-            // Update UI Text
-            if (currentLang === 'EN') {
-                if (welcomeTitle) welcomeTitle.innerText = "How can I help?";
-                mainInput.placeholder = "Ask anything...";
-                newChatBtn.setAttribute('title', 'New Chat');
-            } else {
-                if (welcomeTitle) welcomeTitle.innerText = "Como posso ajudar?";
-                mainInput.placeholder = "Pergunte alguma coisa";
-                newChatBtn.setAttribute('title', 'Novo Chat');
-            }
+            const nextLang = currentLang === 'PT' ? 'EN' : 'PT';
+            applyLanguage(nextLang);
         });
     }
 
-    // --- Auto-expanding Textarea ---
+    // --- INITIALIZATION ---
+    const savedTheme = localStorage.getItem('phishing_theme');
+    if (savedTheme === 'dark') applyTheme(true);
+
+    applyModelSettings(selectedModel);
+    applyLanguage(currentLang);
+
+    // Handle Quick Suggestions
+    document.querySelectorAll('.suggestion-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const query = card.dataset.query;
+            const intent = card.dataset.intent;
+            mainInput.value = query;
+            // Dispatch submit event with extra detail to force chat for these suggestions
+            analysisForm.dispatchEvent(new CustomEvent('submit', {
+                detail: { forceChat: true, intent: intent }
+            }));
+        });
+    });
+
+    // --- Auto-expanding Textarea & Enter to Submit ---
     mainInput.addEventListener('input', () => {
         mainInput.style.height = 'auto';
         mainInput.style.height = (mainInput.scrollHeight) + 'px';
+    });
+
+    mainInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            analysisForm.dispatchEvent(new Event('submit'));
+        }
     });
 
     // --- Image Upload (Triggered by Plus icon) ---
@@ -149,49 +245,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- New Chat Reset ---
-    newChatBtn.addEventListener('click', () => {
+    const resetChat = () => {
+        console.log("Resetando chat...");
         welcomeSection.style.display = 'block';
         chatMessages.innerHTML = '';
         mainInput.value = '';
         mainInput.style.height = 'auto';
-    });
 
-    let hasContext = false;
+        hasContext = false;
+        imgInput.value = '';
+        updateImageBadge(null);
+
+        chatWrapper.scrollTo({ top: 0, behavior: 'instant' });
+    };
+
+    if (newChatBtn) newChatBtn.addEventListener('click', resetChat);
+
+    // Also wire up the sidebar "Novo chat" item
+    const sidebarNewChat = document.querySelector('.sidebar-nav .nav-item');
+    if (sidebarNewChat) {
+        sidebarNewChat.style.cursor = 'pointer';
+        sidebarNewChat.addEventListener('click', resetChat);
+    }
 
     // --- Form Submission ---
     analysisForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // 1. Capture ALL data immediately
         const userInput = mainInput.value.trim();
-        const hasImage = imgInput.files.length > 0;
+        const imageFile = imgInput.files.length > 0 ? imgInput.files[0] : null;
+        const hasImage = !!imageFile;
+        const isUrl = /^(http|https):\/\/[^ "]+$/.test(userInput);
+        const isLongText = userInput.length > 500; // Text analysis is for long emails
+        // Match keywords anywhere in the message for better flexibility
+        const conversationalKeywords = /\b(o que|como|quem|onde|por que|what|how|why|who|where|is|can|posso|quero|me ajude|me diga|dicas|ajuda|olá|oi|exemplo|mostre|exemplos|show me|help|vulnerabilidade|segurança)\b/i;
+        const looksLikeQuestion = conversationalKeywords.test(userInput) || userInput.includes('?') || userInput.length < 20;
+        const forceChat = e.detail && e.detail.forceChat;
 
         if (!userInput && !hasImage) return;
 
-        // Transitions
-        welcomeSection.style.display = 'none';
+        // 2. Prepare FormData immediately (capturing the file reference)
+        const formData = new FormData();
+        if (isUrl) formData.append('url', userInput);
+        else formData.append('text', userInput);
+        if (hasImage) formData.append('image', imageFile);
+        formData.append('model', selectedModel);
+        formData.append('lang', currentLang);
 
-        // Use standard ChatGPT-style User Message
+        // 3. Show User Message (UI transition)
+        welcomeSection.style.display = 'none';
         if (hasImage) {
-            const file = imgInput.files[0];
             const reader = new FileReader();
             reader.onload = (event) => {
                 appendUserMessage(userInput || "[Análise de Imagem]", event.target.result);
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(imageFile);
         } else {
             appendUserMessage(userInput);
         }
 
+        // 4. Clear UI inputs
         mainInput.value = '';
         mainInput.style.height = 'auto';
-        imgInput.value = ''; // Clear file input after use
-        updateImageBadge(null); // Clear the UI badge
+        imgInput.value = '';
+        updateImageBadge(null);
 
-        // Logic: Is this a scan or a question?
-        const isUrl = /^(http|https):\/\/[^ "]+$/.test(userInput);
-        const isLongText = userInput.length > 60;
-
-        // If we have context and it looks like a question, call /chat
-        if (hasContext && !isUrl && !isLongText && !hasImage) {
+        // 5. Logic: Is this a scan or a question?
+        // Route to chat if: has context, OR specifically requested, OR looks like a general question (and NOT a URL)
+        if ((hasContext || looksLikeQuestion || forceChat) && !isUrl && !isLongText && !hasImage) {
             const loadingId = appendLoadingMessage();
             try {
                 const response = await fetch('/chat', {
@@ -199,7 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         query: userInput,
-                        model: selectedModel
+                        model: selectedModel,
+                        lang: currentLang
                     })
                 });
                 const data = await response.json();
@@ -216,15 +339,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Otherwise, it's a new analysis (Scan)
-        const formData = new FormData();
-        if (isUrl) formData.append('url', userInput);
-        else formData.append('text', userInput);
-        if (hasImage) formData.append('image', imgInput.files[0]);
-        formData.append('model', selectedModel);
-
+        // 6. Send Analysis (Scan) using the prepared formData
         const loadingId = appendLoadingMessage();
         try {
+            console.log("Enviando análise...", { hasImage, userInput, selectedModel });
             const response = await fetch('/predict', {
                 method: 'POST',
                 body: formData
@@ -236,11 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.error) throw new Error(data.error);
 
             showResultCard(data);
-            hasContext = true; // Set context after first successful scan
+            hasContext = true;
             loadHistory();
         } catch (err) {
             removeLoadingMessage(loadingId);
             appendAiMessage("Erro na análise: " + err.message);
+            console.error("Erro fetch /predict:", err);
         }
     });
 
@@ -248,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.className = 'message-bubble-user-gpt mb-4 px-4 text-end';
 
-        let content = `<span class="bg-light p-3 rounded-4 d-inline-block shadow-sm" style="max-width: 80%; text-align: left;">`;
+        let content = `<span class="user-bubble-content p-3 rounded-4 d-inline-block shadow-sm" style="max-width: 80%; text-align: left;">`;
         if (imgSrc) {
             content += `<img src="${imgSrc}" class="img-fluid rounded-3 mb-2 d-block" style="max-height: 200px; width: auto;">`;
         }
@@ -320,6 +439,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
         chatMessages.appendChild(clone);
+
+        // Handle Suggested Question
+        if (data.suggested_question) {
+            const suggestionContainer = chatMessages.lastElementChild.querySelector('.suggestion-container');
+            const suggestionPill = suggestionContainer.querySelector('.suggestion-pill');
+            const suggestionText = suggestionContainer.querySelector('.suggestion-text');
+
+            suggestionText.innerText = data.suggested_question;
+            suggestionContainer.classList.remove('d-none');
+            setTimeout(() => suggestionPill.classList.add('suggestion-pill-active'), 500);
+
+            suggestionPill.addEventListener('click', () => {
+                const question = data.suggested_question;
+                mainInput.value = question;
+                // Dispatch enter key or call form submit
+                analysisForm.dispatchEvent(new Event('submit'));
+            });
+        }
+
         if (window.lucide) lucide.createIcons();
         scrollToBottom();
     }
@@ -360,4 +498,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     loadHistory();
+
+    // --- Check for URL parameter to trigger auto-analysis ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    if (searchParam) {
+        mainInput.value = searchParam;
+        // Wait a bit for everything to load then trigger submit
+        setTimeout(() => {
+            analysisForm.dispatchEvent(new Event('submit'));
+            // Remove the param from URL without reloading to keep it clean
+            window.history.replaceState({}, document.title, "/");
+        }, 500);
+    }
 });

@@ -61,21 +61,25 @@
             <div class="chat-header-gpt px-4 py-2">
                 <div class="header-brand-container d-flex align-items-center">
                     <div class="dropdown">
-                        <div class="gpt-version-selector ms-5 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                        <div class="gpt-version-selector ms-5" data-bs-toggle="dropdown" aria-expanded="false"
+                            style="cursor: pointer;">
                             <span id="active-model-name">IA-Phishing</span>
-                            <i data-lucide="chevron-down" class="ms-1 opacity-50" style="width: 16px; height: 16px;"></i>
+                            <i data-lucide="chevron-down" class="ms-1 opacity-50"
+                                style="width: 16px; height: 16px;"></i>
                         </div>
                         <ul class="dropdown-menu shadow border-0 mt-2 rounded-3 p-2" style="min-width: 200px;">
                             <li>
                                 <a class="dropdown-item rounded-2 p-2 mb-1 active" href="#" data-model="ollama">
                                     <div class="fw-bold" style="font-size: 0.9rem;">Ollama (Local)</div>
-                                    <div class="small text-muted" style="font-size: 0.75rem;">Qwen 2.5 0.5B - Privacidade</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Qwen 2.5 0.5B -
+                                        Privacidade</div>
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item rounded-2 p-2" href="#" data-model="openai">
                                     <div class="fw-bold" style="font-size: 0.9rem;">OpenAI (Cloud)</div>
-                                    <div class="small text-muted" style="font-size: 0.75rem;">GPT-4o - Máxima Inteligência</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">GPT-4o - Máxima
+                                        Inteligência</div>
                                 </a>
                             </li>
                         </ul>
@@ -91,17 +95,48 @@
                     <button class="btn btn-header-icon" id="dark-mode-btn" title="Modo Escuro">
                         <i data-lucide="moon"></i>
                     </button>
-                    <!-- Share (Original) -->
-                    <button class="btn btn-header-icon">
-                        <i data-lucide="share" class="opacity-50"></i>
-                    </button>
+                    <!-- Logout -->
+                    <a href="/logout" class="btn btn-header-icon text-danger" title="Sair">
+                        <i data-lucide="log-out"></i>
+                    </a>
                 </div>
             </div>
 
             <div class="chat-wrapper" id="chat-wrapper">
                 <!-- Centered Welcome Prompt -->
                 <div class="welcome-section-gpt" id="welcome-section">
-                    <h1>Como posso ajudar?</h1>
+                    <h1 id="welcome-title">Como posso ajudar?</h1>
+
+                    <div class="quick-suggestions-gpt row g-3 mt-4 px-4 w-100 mx-auto justify-content-center"
+                        style="max-width: 800px;">
+                        <div class="col-md-6">
+                            <div class="suggestion-card" data-intent="link"
+                                data-query="Quero verificar um link suspeito">
+                                <i data-lucide="link" class="mb-2"></i>
+                                <span>Verificar um link suspeito</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="suggestion-card" data-intent="text"
+                                data-query="Quero analisar um texto de e-mail">
+                                <i data-lucide="mail" class="mb-2"></i>
+                                <span>Analisar texto de e-mail</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="suggestion-card" data-intent="tips"
+                                data-query="Me dê algumas dicas de segurança contra phishing">
+                                <i data-lucide="shield-question" class="mb-2"></i>
+                                <span>Dicas de segurança</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="suggestion-card" data-intent="ssl" data-query="Me fale sobre certificados SSL">
+                                <i data-lucide="lock" class="mb-2"></i>
+                                <span>Sobre certificados SSL</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Chat Messages -->
@@ -155,6 +190,14 @@
 
                 <div class="details-grid mt-4 row g-3">
                     <!-- Agent boxes -->
+                </div>
+
+                <!-- Proactive Suggestion -->
+                <div class="suggestion-container mt-4 d-none">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill suggestion-pill py-2 px-3 shadow-sm">
+                        <i data-lucide="sparkles" class="me-1 mb-1" style="width: 14px; height: 14px;"></i>
+                        <span class="suggestion-text"></span>
+                    </button>
                 </div>
             </div>
         </div>

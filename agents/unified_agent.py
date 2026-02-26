@@ -33,7 +33,7 @@ class UnifiedTextHTMLAgent:
             logger.warning(f"Não foi possível buscar HTML: {e}")
             return None
 
-    def analyze(self, text=None, html_content=None, url=None, model_pref=None):
+    def analyze(self, text=None, html_content=None, url=None, model_pref=None, lang='PT'):
         """
         Analisa texto + HTML em uma única chamada LLM.
         """
@@ -58,7 +58,8 @@ class UnifiedTextHTMLAgent:
         llm_result = llm_client.analyze("prompt_unified.txt", {
             "text": analysis_text,
             "url": analysis_url,
-            "html": html_snippet
+            "html": html_snippet,
+            "lang": lang
         }, model_pref=model_pref)
 
         if llm_result:
@@ -99,5 +100,6 @@ class UnifiedTextHTMLAgent:
             "agent": self.name,
             "score": round(score, 3),
             "result": result,
-            "findings": findings
+            "findings": findings,
+            "suggested_question": "Como posso saber se um link é realmente perigoso?" if lang == 'PT' else "How can I tell if a link is truly dangerous?"
         }

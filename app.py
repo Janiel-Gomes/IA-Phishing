@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from functools import wraps
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -29,6 +30,7 @@ CORS(app)
 # Banco de Dados
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path.replace('\\', '/')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = 'super-secret-key-admin' # Em produção, use algo seguro
 
 @app.after_request
 def add_header(response):
@@ -71,11 +73,43 @@ orchestrator = PhishingOrchestrator()
 # Armazenar a última análise em memória (apenas para o chat interativo neste projeto acadêmico)
 last_analysis_context = {}
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
+def login_page():
+    if 'logged_in' in session:
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    if username == 'admin' and password == 'admin':
+        session['logged_in'] = True
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'message': 'Credenciais inválidas'}), 401
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login_page'))
+
+@app.route('/app')
+@login_required
 def index():
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
+@login_required
 def predict():
     try:
         # Check for multi-part form data (for images) or JSON
@@ -98,13 +132,14 @@ def predict():
             image_data = base64.b64decode(data['image_b64'].split(',')[-1])
 
         model_pref = data.get('model') # 'ollama' or 'openai'
-        logger.info(f"Analisando Multi-Modal: URL={url}, Text={bool(text)}, HTML={bool(html)}, Image={bool(image_data)}, ModelPref={model_pref}")
+        lang = data.get('lang', 'PT')
+        logger.info(f"Analisando Multi-Modal: URL={url}, Text={bool(text)}, HTML={bool(html)}, Image={bool(image_data)}, ModelPref={model_pref}, Lang={lang}")
 
         if not any([url, text, html, image_data]):
             return jsonify({'error': 'Nenhum dado fornecido para análise.'}), 400
 
         # Executar análise multi-modal
-        results = orchestrator.analyze_full(url=url, text=text, html=html, image_data=image_data, model_pref=model_pref)
+        results = orchestrator.analyze_full(url=url, text=text, html=html, image_data=image_data, model_pref=model_pref, lang=lang)
         
         result = results['verdict']
         confidence = results['risk_score']
@@ -133,7 +168,8 @@ def predict():
             'url': record_url,
             'description': description,
             'confidence': round(confidence * 100, 2),
-            'agent_details': results['agent_details']
+            'agent_details': results['agent_details'],
+            'suggested_question': results.get('suggested_question')
         }
         
         return jsonify(response)
@@ -143,6 +179,7 @@ def predict():
         return jsonify({'error': 'Erro interno do servidor.'}), 500
 
 @app.route('/chat', methods=['POST'])
+@login_required
 def chat():
     try:
         data = request.get_json()
@@ -151,11 +188,14 @@ def chat():
         if not user_query:
             return jsonify({'error': 'Mensagem vazia.'}), 400
             
-        if not last_analysis_context:
-            return jsonify({'answer': 'Por favor, realize uma análise primeiro para que eu possa explicar os resultados!'})
-
         model_pref = data.get('model')
-        answer = orchestrator.chat_explanation(user_query, {**last_analysis_context, 'model_pref': model_pref})
+        lang = data.get('lang', 'PT')
+        
+        # Inject selection into context for the LLM
+        # Use empty dict if no analysis has been done yet
+        context = {**(last_analysis_context or {}), 'model_pref': model_pref, 'lang': lang}
+        
+        answer = orchestrator.chat_explanation(user_query, context)
         return jsonify({'answer': answer})
         
     except Exception as e:
@@ -163,20 +203,23 @@ def chat():
         return jsonify({'error': 'Erro ao processar conversa.'}), 500
 
 @app.route('/history', methods=['GET'])
+@login_required
 def get_history():
     try:
-        # Pega as últimas 10 análises
-        history = ScannedURL.query.order_by(ScannedURL.timestamp.desc()).limit(10).all()
+        # Pega as últimas 50 análises
+        history = ScannedURL.query.order_by(ScannedURL.timestamp.desc()).limit(50).all()
         return jsonify([item.to_dict() for item in history])
     except Exception as e:
         logger.error(f"Erro ao buscar histórico: {e}")
         return jsonify({'error': 'Erro ao buscar histórico.'}), 500
 
 @app.route('/stats_page')
+@login_required
 def stats_page():
     return render_template('stats.html')
 
 @app.route('/stats', methods=['GET'])
+@login_required
 def get_stats():
     try:
         total = ScannedURL.query.count()
@@ -191,9 +234,9 @@ def get_stats():
         # Taxa de detecção (phishing + suspeito / total)
         detection_rate = round(((phishing + suspect) / total * 100), 1) if total > 0 else 0
         
-        # Últimas 7 análises para o mini-gráfico
-        recent = ScannedURL.query.order_by(ScannedURL.timestamp.desc()).limit(7).all()
-        timeline = [{'date': r.timestamp.strftime('%d/%m'), 'result': r.result} for r in reversed(recent)]
+        # Últimas 20 análises para o mini-gráfico/histórico
+        recent = ScannedURL.query.order_by(ScannedURL.timestamp.desc()).limit(20).all()
+        timeline = [{'date': r.timestamp.strftime('%d/%m'), 'result': r.result, 'url': r.url} for r in reversed(recent)]
         
         return jsonify({
             'total': total,

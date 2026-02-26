@@ -1,6 +1,7 @@
 from agents.url_agent import URLLexicalAgent
 from agents.unified_agent import UnifiedTextHTMLAgent
 from agents.vision_agent import VisionAgent
+from agents.ssl_agent import SSLAnalysisAgent
 from agents.llm_client import llm_client
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
@@ -15,9 +16,10 @@ class PhishingOrchestrator:
         self.url_agent = URLLexicalAgent()
         self.unified_agent = UnifiedTextHTMLAgent()
         self.vision_agent = VisionAgent()
+        self.ssl_agent = SSLAnalysisAgent()
         logger.info("Todos os agentes foram inicializados.")
 
-    def analyze_full(self, url=None, text=None, html=None, image_data=None, model_pref=None):
+    def analyze_full(self, url=None, text=None, html=None, image_data=None, model_pref=None, lang='PT'):
         """
         Executa uma análise completa usando todos os agentes em PARALELO.
         """
@@ -37,7 +39,8 @@ class PhishingOrchestrator:
                     text=text or url,
                     html_content=html,
                     url=url,
-                    model_pref=model_pref
+                    model_pref=model_pref,
+                    lang=lang
                 )] = "Unified Agent"
 
             # 3. Análise de Visão (Imagem) — só executa se há imagem
@@ -45,8 +48,17 @@ class PhishingOrchestrator:
                 futures[executor.submit(
                     self.vision_agent.analyze, 
                     image_data=image_data,
-                    model_pref=model_pref
+                    model_pref=model_pref,
+                    lang=lang
                 )] = "Vision Agent"
+
+            # 4. Análise SSL/TLS
+            if url:
+                futures[executor.submit(
+                    self.ssl_agent.analyze,
+                    url=url,
+                    lang=lang
+                )] = "SSL Agent"
 
             # Coletar resultados à medida que ficam prontos
             for future in as_completed(futures):
@@ -66,11 +78,15 @@ class PhishingOrchestrator:
         # 4. Consolidação (Ensemble)
         final_verdict = self._consolidate(results)
         
+        # Obter a primeira sugestão de pergunta disponível dos agentes
+        suggested_q = next((res.get("suggested_question") for res in results if res.get("suggested_question")), None)
+        
         return {
             "verdict": final_verdict["result"],
             "risk_score": final_verdict["score"],
             "agent_details": results,
             "summary": final_verdict["summary"],
+            "suggested_question": suggested_q,
             "model_pref": model_pref
         }
 
@@ -85,8 +101,9 @@ class PhishingOrchestrator:
         weights = {
             "URL Lexical Analyzer": 0.25,
             "NLP Text Analyzer": 0.35,
-            "HTML Structural Analyzer": 0.25,
-            "Vision Analysis Agent": 0.15
+            "HTML Structural Analyzer": 0.20,
+            "Vision Analysis Agent": 0.10,
+            "SSL/TLS Certificate Analyzer": 0.15
         }
         
         total_weight = 0

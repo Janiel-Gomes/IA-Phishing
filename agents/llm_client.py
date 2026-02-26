@@ -24,6 +24,7 @@ class AnalysisResult(BaseModel):
     result: str = Field(description="O veredito final: 'Phishing', 'Suspeito' ou 'Legítima'")
     score: float = Field(description="A probabilidade ou score de risco entre 0.0 e 1.0", ge=0.0, le=1.0)
     summary: str = Field(description="Um breve resumo de por que esta decisão foi tomada")
+    suggested_question: str = Field(description="Uma pergunta instigante para o usuário fazer no chat sobre este resultado")
 
 class LLMClient:
     def __init__(self, ollama_model="qwen2.5:0.5b"):
@@ -93,11 +94,14 @@ class LLMClient:
         try:
             llm_suite = self._get_llm(model_name, model_pref=model_pref)
             
+            lang_instr = f"\nResponda obrigatoriamente no idioma: {'Inglês (English)' if template_vars.get('lang') == 'EN' else 'Português (Portuguese)'}. Os campos 'result', 'summary' e 'suggested_question' do JSON DEVEM estar nesse idioma."
+            complete_system_prompt = self.system_prompt + lang_instr
+
             if image_data:
                 import base64
                 b64_image = base64.b64encode(image_data).decode("utf-8")
                 msg = [
-                    ("system", self.system_prompt),
+                    ("system", complete_system_prompt),
                     ("human", [
                         {"type": "text", "text": prompt_template},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_image}"}}
@@ -106,7 +110,7 @@ class LLMClient:
                 response = llm_suite['structured'].invoke(msg)
             else:
                 msg = [
-                    ("system", self.system_prompt),
+                    ("system", complete_system_prompt),
                     ("human", prompt_template)
                 ]
                 response = llm_suite['structured'].invoke(msg)
@@ -119,26 +123,60 @@ class LLMClient:
             logger.error(f"Falha na chamada ao LLM: {e}")
             return None
 
+    def _is_query_harmful(self, query):
+        """
+        Detecta se o usuário está pedindo para CRIAR algo malicioso em vez de analisar.
+        """
+        query_l = query.lower()
+        create_keywords = ['criar', 'gerar', 'desenvolver', 'produzir', 'fazer', 'create', 'generate', 'build', 'develop', 'make']
+        malicious_keywords = ['malware', 'virus', 'vírus', 'exploit', 'payload', 'ransomware', 'trojan', 'botnet', 'keylogger', 'phishing script', 'script de phishing', ' backdoor']
+        
+        # Se contiver um verbo de criação E um substantivo malicioso, bloqueia
+        has_create = any(kw in query_l for kw in create_keywords)
+        has_malice = any(kw in query_l for kw in malicious_keywords)
+        
+        return has_create and has_malice
+
     def chat_with_rag(self, user_query, analysis_context):
         """
-        Usa o sistema RAG para recuperar respostas sobre phishing e contexto atual
+        Usa o sistema RAG para recuperar respostas sobre phishing e contexto atual com Guardrails de segurança.
         """
+        # --- Guardrail de Segurança ---
+        if self._is_query_harmful(user_query):
+            refusals = {
+                'PT': "Desculpe, mas eu fui projetado exclusivamente para fins de DEFESA e ANÁLISE de segurança. Não posso ajudar na criação, desenvolvimento ou geração de malware, exploits ou qualquer tipo de software malicioso.",
+                'EN': "I apologize, but I am strictly designed for defensive and security analysis purposes. I cannot assist in the creation, development, or generation of malware, exploits, or any kind of malicious software."
+            }
+            lang = analysis_context.get('lang', 'PT')
+            return refusals.get(lang, refusals['PT'])
+
         try:
             retriever = rag_manager.get_retriever(k=3)
             
-            system_chat_prompt = """Você é um especialista em cibersegurança e Phishing. 
-Utilize o seguinte contexto da base de dados (se houver), juntamente com a análise que acabou de ser feita na aba original.
-Sua resposta deve ser explicativa, didática e direta.
+            system_chat_prompt = """Você é um especialista em cibersegurança e Phishing de caráter estritamente DEFENSIVO.
+Utilize o seguinte contexto da base de dados (se houver), juntamente com a análise que acabou de ser feita (se houver).
+
+DIRETRIZ ÉTICA: Você nunca deve auxiliar na criação de ataques. Se a pergunta for sobre como criar uma ameaça, recuse. Sua missão é explicar riscos e proteger usuários.
+
+IMPORTANTE: Se o contexto de 'Análise Local do Sistema' estiver vazio ou for apenas '{{}}', significa que o usuário ainda não enviou nada para analisar. 
+Nesse caso, sua missão é ser PROATIVO:
+- Se o usuário quer verificar um link, pergunte: "Qual é o link que você gostaria que eu analisasse?"
+- Se o usuário quer dicas, forneça algumas dicas gerais e pergunte se ele quer um tema específico (Redes Sociais, Senhas, E-mails, etc).
+- Se o usuário quer analisar um e-mail, peça que ele cole o texto ou anexe uma imagem.
+- Se o usuário pedir um exemplo de phishing, forneça um exemplo didático e explique quais sinais o tornam suspeito, sempre com foco em educação e defesa.
 
 Contexto da Base de Conhecimento RAG: {context}
 
-Análise Local do Sistema:
+Análise Local do Sistema (Contexto Atual):
 {analysis_context}
 
 Gere uma resposta útil baseada nesses contextos e em seu conhecimento."""
             
+            target_lang = analysis_context.get('lang', 'PT')
+            lang_instr = f"\nResponda obrigatoriamente no idioma: {'Inglês (English)' if target_lang == 'EN' else 'Português (Portuguese)'}. Sua explicação e respostas devem estar nesse idioma."
+            
             prompt = ChatPromptTemplate.from_messages([
-                ("system", system_chat_prompt),
+                ("system", system_chat_prompt + lang_instr),
                 ("human", "{input}")
             ])
 

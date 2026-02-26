@@ -17,7 +17,7 @@ class HTMLStructuralAgent:
             logger.warning(f"Não foi possível buscar HTML: {e}")
             return None
 
-    def analyze(self, html_content=None, url=None):
+    def analyze(self, html_content=None, url=None, lang='PT'):
         """
         Analisa a estrutura do HTML usando LLM com fallback para heurística.
         """
@@ -51,5 +51,6 @@ class HTMLStructuralAgent:
             "agent": self.name,
             "score": score,
             "result": "Suspeito" if score > 0.4 else "Legítima",
-            "findings": findings
+            "findings": findings,
+            "suggested_question": "Quais sinais no código de um site indicam phishing?" if lang == 'PT' else "What signs in a website's code indicate phishing?"
         }

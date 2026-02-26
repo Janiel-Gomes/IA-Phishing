@@ -65,11 +65,30 @@
             border: 1px solid #e0e0e0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             height: 100%;
-            transition: transform 0.2s;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card-custom::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gpt-primary, #007bff);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .stat-card-custom:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card-custom:hover::before {
+            opacity: 1;
         }
 
         .icon-circle {
@@ -99,7 +118,7 @@
         }
 
         .blue-icon {
-            background: #e7f1ff;
+            background: linear-gradient(135deg, #e7f1ff 0%, #d0e5ff 100%);
             color: #007bff;
         }
 
@@ -181,28 +200,43 @@
             border-radius: 12px;
             background: #fff;
             border: 1px solid #f1f5f9;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.2s;
         }
 
-        .timeline-date {
-            font-size: 0.75rem;
-            color: #94a3b8;
+        .timeline-item:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: scale(1.01);
         }
 
-        .timeline-res {
-            font-size: 0.85rem;
-            font-weight: 600;
+        #recent-log {
+            max-height: 120px;
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-right: -4px;
+            /* Offset scrollbar space */
         }
 
-        .badge-mini {
-            padding: 4px 10px;
-            border-radius: 50px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
+        /* Subtle scrollbar for timeline */
+        #recent-log::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #recent-log::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #recent-log::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        #recent-log::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
         }
 
         .bg-phishing {
@@ -228,9 +262,14 @@
                 <a href="/" class="back-btn"><i data-lucide="arrow-left"></i></a>
                 <div class="page-title"><i data-lucide="bar-chart-2"></i> Estatísticas</div>
             </div>
-            <button class="btn btn-light rounded-pill px-4 shadow-sm border" onclick="window.location.reload()">
-                <i data-lucide="refresh-cw" class="me-2" style="width: 14px;"></i> Atualizar
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-light rounded-pill px-4 shadow-sm border" onclick="window.location.reload()">
+                    <i data-lucide="refresh-cw" class="me-2" style="width: 14px;"></i> Atualizar
+                </button>
+                <a href="/logout" class="btn btn-light rounded-pill px-3 shadow-sm border text-danger" title="Sair">
+                    <i data-lucide="log-out" style="width: 16px;"></i>
+                </a>
+            </div>
         </div>
 
         <!-- Top 4 Summary Cards -->
@@ -266,10 +305,10 @@
         </div>
 
         <!-- Main Dashboard Content -->
-        <div class="row g-4">
+        <div class="row g-4 mb-4">
             <!-- Result Distribution (Progress Bars) -->
             <div class="col-lg-7">
-                <div class="dashboard-box">
+                <div class="dashboard-box h-100">
                     <h5 class="box-title"><i data-lucide="shield"></i> Distribuição de Resultados</h5>
 
                     <div class="dist-row">
@@ -300,9 +339,9 @@
 
             <!-- Recent Analysis Log -->
             <div class="col-lg-5">
-                <div class="dashboard-box h-100">
+                <div class="dashboard-box h-100 d-flex flex-column">
                     <h5 class="box-title"><i data-lucide="clock"></i> Últimas Análises</h5>
-                    <div id="recent-log">
+                    <div id="recent-log" class="flex-grow-1">
                         <!-- Items injected here -->
                     </div>
                 </div>
@@ -311,6 +350,11 @@
     </div>
 
     <script>
+        // Apply persistent theme
+        if (localStorage.getItem('phishing_theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
         lucide.createIcons();
 
         async function loadDashboard() {
@@ -336,14 +380,23 @@
 
                 // Timeline
                 const log = document.getElementById('recent-log');
-                log.innerHTML = data.timeline.slice(0, 5).map(t => {
+                log.innerHTML = data.timeline.reverse().map(t => {
                     const badgeClass = t.result === 'Phishing' ? 'text-bg-danger' :
                         (t.result === 'Suspeito' ? 'text-bg-warning' : 'text-bg-success');
+
+                    // Se o resultado for Legítima, usamos o badge verde
+                    const badgeFinal = t.result === 'Legítima' ? 'text-bg-success' : badgeClass;
+
                     return `
-                        <div class="timeline-item shadow-sm">
-                            <span class="timeline-date">${t.date}</span>
-                            <span class="badge badge-mini ${badgeClass}">${t.result}</span>
-                        </div>
+                        <a href="/?search=${encodeURIComponent(t.url || '')}" class="text-decoration-none">
+                            <div class="timeline-item shadow-sm border-0 mb-3" style="cursor: pointer; transition: background 0.2s;">
+                                <div class="d-flex flex-column flex-grow-1 overflow-hidden me-2">
+                                    <span class="timeline-url fw-medium" style="color: #1a1a1a; font-size: 0.8rem; line-height: 1.2; overflow-wrap: break-word; word-break: break-all;">${t.url || 'Análise de Texto'}</span>
+                                    <span class="timeline-date" style="font-size: 0.65rem; color: #94a3b8; margin-top: 2px;">${t.date}</span>
+                                </div>
+                                <span class="badge rounded-pill ${badgeFinal}" style="font-size: 0.6rem; padding: 4px 8px; flex-shrink: 0;">${t.result}</span>
+                            </div>
+                        </a>
                     `;
                 }).join('');
 
